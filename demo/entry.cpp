@@ -5,14 +5,17 @@ GR::Entity sword;
 
 void Loop(GR::GrayEngine* Context, double Delta)
 {
-	double angle = Context->GetTime();
+	double angle = glm::mod(Context->GetTime(), 360.0);
 
 	GRComponents::Transform& wld = Context->GetComponent<GRComponents::Transform>(sword);
-	wld.SetOffset(TVec3(0.0, glm::sin(angle) * 5.0, 0.0));
+	wld.SetOffset(TVec3(0.0, angle, 0.0));
 	wld.SetRotation(0.0, glm::radians(angle * 50.0), 0.0);
 
 	GRComponents::Color& clr = Context->GetComponent<GRComponents::Color>(sword);
 	clr.RGB = glm::abs(TVec3(glm::sin(angle), glm::cos(angle), glm::tan(angle)));
+
+	//glm::vec3 off = Context->GetMainCamera().View.GetOffset();
+	//printf("%f %f %f\n", off.x, off.y, off.z);
 
 	Context->GetWindow().SetTitle(("Vulkan Application " + std::format("{:.1f}", 1.0 / Delta)).c_str());
 }
