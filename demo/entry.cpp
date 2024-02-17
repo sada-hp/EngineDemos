@@ -14,7 +14,7 @@ void Loop(GR::GrayEngine* Context, double Delta)
 	GRComponents::Color& clr = Context->GetComponent<GRComponents::Color>(sword);
 	clr.RGB = glm::abs(TVec3(glm::sin(angle), glm::cos(angle), glm::tan(angle)));
 
-	Context->GetWindow().SetTitle(("Vulkan Application " + std::to_string(1.0 / Delta)).c_str());
+	Context->GetWindow().SetTitle(("Vulkan Application " + std::format("{:.1f}", 1.0 / Delta)).c_str());
 }
 
 void KeyPress(GR::GrayEngine* Context, GR::EKey key, GR::EAction Action)
