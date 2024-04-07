@@ -5,5 +5,11 @@ project(DemoPrj)
 
 set(COPY_PATH ${DemoPrj_SOURCE_DIR}/bin)
 
+set(INCLUDE_GUI 1)
+
+if(INCLUDE_GUI)
+    add_compile_definitions(INCLUDE_GUI)
+endif()
+
 add_subdirectory(engine)
 add_subdirectory(demo)

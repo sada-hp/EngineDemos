@@ -2,12 +2,14 @@ include_directories(${DemoPrj_SOURCE_DIR}/engine/include)
 include_directories(${DemoPrj_SOURCE_DIR}/engine/source)
 link_directories(${DemoPrj_SOURCE_DIR}/engine/libraries)
 
-set(
-    ROOT_SOURCES 
-	"entry.cpp"
-)
+file(GLOB ROOT_SOURCES "${DemoPrj_SOURCE_DIR}/demo/*.cpp" "${DemoPrj_SOURCE_DIR}/demo/*.h")
 
-add_executable(demo ${ROOT_SOURCES})
+if (INCLUDE_GUI)
+    include_directories("${DemoPrj_SOURCE_DIR}/engine/include/imgui")
+    file(GLOB IMGUI_SOURCES "${DemoPrj_SOURCE_DIR}/engine/include/imgui/*.cpp")
+endif()
+
+add_executable(demo ${ROOT_SOURCES} ${IMGUI_SOURCES})
 
 add_compile_definitions(DEBUG=$<CONFIG:Debug>)
 set_target_properties(demo PROPERTIES  RUNTIME_OUTPUT_DIRECTORY_DEBUG ${DemoPrj_SOURCE_DIR}/bin)
