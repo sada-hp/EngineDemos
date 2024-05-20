@@ -4,6 +4,7 @@
 GR::Entity sword;
 
 TVec3 Sun = glm::normalize(TVec3(1.0));
+TVec3 pyr;
 //TVec3 Sun = TVec3(0.0);
 
 void Loop(GR::GrayEngine* Context, double Delta)
@@ -17,7 +18,7 @@ void Loop(GR::GrayEngine* Context, double Delta)
 	GRComponents::Color& clr = Context->GetComponent<GRComponents::Color>(sword);
 	clr.RGB = glm::abs(TVec3(glm::sin(angle), glm::cos(angle), glm::tan(angle)));
 
-	Sun.x = glm::radians(angle);
+	Sun.x = glm::radians(glm::min(angle, 75.0));
 	glm::quat q = glm::angleAxis(Sun.x, glm::vec3(1.0, 0.0, 0.0));
 	q *= glm::angleAxis(Sun.y, glm::vec3(0.0, 1.0, 0.0));
 	q *= glm::angleAxis(Sun.z, glm::vec3(0.0, 0.0, 1.0));
@@ -34,6 +35,7 @@ void UI(GR::GrayEngine* Context, double Delta)
 	ImGui::SetWindowSize({ 350, 150 });
 
 	ImGui::SliderFloat("Coverage", &Context->GetRenderer().CloudLayer.Coverage, 0.0, 1.0);
+	ImGui::SliderFloat("Vertical span", &Context->GetRenderer().CloudLayer.VerticalSpan, 0.0, 1.0);
 	ImGui::SliderFloat("Wind speed", &Context->GetRenderer().CloudLayer.WindSpeed, 0.0, 1.0);
 	ImGui::SliderFloat("Phase coefficient", &Context->GetRenderer().CloudLayer.PhaseCoefficient, 0.0, 1.0);
 	ImGui::DragFloat("Absorption", &Context->GetRenderer().CloudLayer.Absorption, 1e-5, 0.0, 1.0, "%.5f");
@@ -63,11 +65,17 @@ void KeyPress(GR::GrayEngine* Context, GR::EKey key, GR::EAction Action)
 	case GR::EKey::W:
 		off.z += 10.f;
 		break;
+	case GR::EKey::PageUp:
+		off.y += 10.f;
+		break;
+	case GR::EKey::PageDown:
+		off.y -= 10.f;
+		break;
 	case GR::EKey::ArrowRight:
-		rot.y += 10.f;
+		rot.y -= 10.f;
 		break;
 	case GR::EKey::ArrowLeft:
-		rot.y -= 10.f;
+		rot.y += 10.f;
 		break;
 	case GR::EKey::ArrowDown:
 		rot.x -= 10.f;
@@ -79,15 +87,15 @@ void KeyPress(GR::GrayEngine* Context, GR::EKey key, GR::EAction Action)
 		break;
 	}
 
-	rot = glm::radians(rot);
-	Context->GetMainCamera().View.Rotate(rot.x, rot.y, rot.z);
+	pyr += glm::radians(rot);
+	Context->GetMainCamera().View.SetRotation(pyr.x, pyr.y, pyr.z);
 	Context->GetMainCamera().View.Translate(off);
 }
 
 int main(int argc, char** argv)
 {
- 	std::string exec_path = "";
-	
+	std::string exec_path = "";
+
 	if (argc > 0)
 	{
 		exec_path = argv[0];
@@ -103,7 +111,7 @@ int main(int argc, char** argv)
 	Engine->GetEventListener().Subscribe(KeyPress);
 
 	sword = Engine->LoadModel("content\\sword.fbx", nullptr);
-	Engine->GetMainCamera().SetWorldPosition({0.0, 0.0, -200.0});
+	Engine->GetMainCamera().View.SetOffset({ 0.0, 0.0, -200.0 });
 
 	Engine->StartGameLoop();
 
