@@ -1,95 +1,74 @@
 #include "pch.hpp"
 #include "engine.hpp"
 
-GR::Entity sword;
+TVec3 CameraPYR;
 
-TVec3 Sun = glm::normalize(TVec3(1.0));
-TVec3 pyr;
-//TVec3 Sun = TVec3(0.0);
+TVec2 Cursor = TVec2(0.0);
+double speed_mult = 1.0;
+float Sun = 1.0;
+
+bool MousePressed = false;
+std::map<GR::EKey, GR::EAction> KeyStates;
 
 void Loop(GR::GrayEngine* Context, double Delta)
 {
+	constexpr double StepTime = 1.0 / 60.0;
+	const double simulation_step = StepTime / Delta;
 	double angle = glm::mod(Context->GetTime(), 360.0);
 
-	GRComponents::Transform& wld = Context->GetComponent<GRComponents::Transform>(sword);
-	wld.SetOffset(TVec3(0.0, glm::sin(angle) * 20.0, 0.0));
-	wld.Rotate(0.0, 0.05, 0.0);
-
-	GRComponents::Color& clr = Context->GetComponent<GRComponents::Color>(sword);
-	clr.RGB = glm::abs(TVec3(glm::sin(angle), glm::cos(angle), glm::tan(angle)));
-
-	Sun.x = glm::radians(glm::min(angle, 75.0));
-	glm::quat q = glm::angleAxis(Sun.x, glm::vec3(1.0, 0.0, 0.0));
-	q *= glm::angleAxis(Sun.y, glm::vec3(0.0, 1.0, 0.0));
-	q *= glm::angleAxis(Sun.z, glm::vec3(0.0, 0.0, 1.0));
-	Context->GetRenderer().SunDirection = q * glm::vec3(1.0);
 	Context->GetWindow().SetTitle(("Vulkan Application " + std::format("{:.1f}", 1.0 / Delta)).c_str());
+	Context->GetRenderer().SunDirection = glm::normalize(glm::vec3(0.0, Sun * 2.0 - 1.0, Sun));
+
+	TVec3 off = TVec3(0.0);
+	if (KeyStates[GR::EKey::A] != GR::EAction::Release) off.x += speed_mult * simulation_step;
+	if (KeyStates[GR::EKey::D] != GR::EAction::Release) off.x -= speed_mult * simulation_step;
+
+	if (KeyStates[GR::EKey::W] != GR::EAction::Release) off.z += speed_mult * simulation_step;
+	if (KeyStates[GR::EKey::S] != GR::EAction::Release) off.z -= speed_mult * simulation_step;
+
+	if (KeyStates[GR::EKey::PageUp] != GR::EAction::Release) off.y += speed_mult * simulation_step;
+	if (KeyStates[GR::EKey::PageDown] != GR::EAction::Release) off.y -= speed_mult * simulation_step;
+
+	Context->GetMainCamera().View.Translate(off);
 }
 
 void UI(GR::GrayEngine* Context, double Delta)
 {
 	ImGui::SetCurrentContext(Context->GetGUIContext());
 
-	ImGui::Begin("Settings");
+	ImGui::Begin("Settings", 0, ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysAutoResize);
 	ImGui::SetWindowPos({ 0, 0 });
-	ImGui::SetWindowSize({ 350, 150 });
 
+	MousePressed = MousePressed && !ImGui::IsWindowHovered();
+
+	ImGui::SliderFloat("Sun position", &Sun, 0.0, 1.0);
 	ImGui::SliderFloat("Coverage", &Context->GetRenderer().CloudLayer.Coverage, 0.0, 1.0);
 	ImGui::SliderFloat("Vertical span", &Context->GetRenderer().CloudLayer.VerticalSpan, 0.0, 1.0);
 	ImGui::SliderFloat("Wind speed", &Context->GetRenderer().CloudLayer.WindSpeed, 0.0, 1.0);
-	ImGui::SliderFloat("Phase coefficient", &Context->GetRenderer().CloudLayer.PhaseCoefficient, 0.0, 1.0);
 	ImGui::DragFloat("Absorption", &Context->GetRenderer().CloudLayer.Absorption, 1e-5, 0.0, 1.0, "%.5f");
 
 	ImGui::End();
 }
 
-void KeyPress(GR::GrayEngine* Context, GR::EKey key, GR::EAction Action)
+void KeyPress(GR::GrayEngine* Context, GREvent::KeyPress Event)
 {
-	if (Action == GR::EAction::Release)
-		return;
+	KeyStates[Event.key] = Event.action;
+}
 
-	TVec3 off = TVec3(0.0);
-	TVec3 rot = TVec3(0.0);
+void MousePress(GR::GrayEngine* Context, GREvent::MousePress Event)
+{
+	Cursor = Context->GetWindow().GetCursorPos();
+	MousePressed = (Event.action != GR::EAction::Release);
+}
 
-	switch (key)
+void MouseMove(GR::GrayEngine* Context, GREvent::MousePosition Position)
+{
+	if (MousePressed)
 	{
-	case GR::EKey::A:
-		off.x += 10.f;
-		break;
-	case GR::EKey::D:
-		off.x -= 10.f;
-		break;
-	case GR::EKey::S:
-		off.z -= 10.f;
-		break;
-	case GR::EKey::W:
-		off.z += 10.f;
-		break;
-	case GR::EKey::PageUp:
-		off.y += 10.f;
-		break;
-	case GR::EKey::PageDown:
-		off.y -= 10.f;
-		break;
-	case GR::EKey::ArrowRight:
-		rot.y -= 10.f;
-		break;
-	case GR::EKey::ArrowLeft:
-		rot.y += 10.f;
-		break;
-	case GR::EKey::ArrowDown:
-		rot.x -= 10.f;
-		break;
-	case GR::EKey::ArrowUp:
-		rot.x += 10.f;
-		break;
-	default:
-		break;
+		CameraPYR += glm::radians(TVec3(Cursor.y - Position.y, Cursor.x - Position.x, 0.0));
+		Context->GetMainCamera().View.SetRotation(CameraPYR.x, CameraPYR.y, CameraPYR.z);
+		Cursor = { Position.x, Position.y };
 	}
-
-	pyr += glm::radians(rot);
-	Context->GetMainCamera().View.SetRotation(pyr.x, pyr.y, pyr.z);
-	Context->GetMainCamera().View.Translate(off);
 }
 
 int main(int argc, char** argv)
@@ -102,16 +81,17 @@ int main(int argc, char** argv)
 		exec_path = exec_path.substr(0, exec_path.find_last_of('\\') + 1);
 	}
 
-	GR::ApplicationSettings Settings = { "Vulkan Application", {1024, 720} };
+	ApplicationSettings Settings = { "Vulkan Application", {1024, 720} };
 	std::unique_ptr<GR::GrayEngine> Engine = std::make_unique<GR::GrayEngine>(exec_path, Settings);
 
 	Engine->AddInputFunction(Loop);
 	Engine->AddInputFunction(UI);
 
 	Engine->GetEventListener().Subscribe(KeyPress);
+	Engine->GetEventListener().Subscribe(MouseMove);
+	Engine->GetEventListener().Subscribe(MousePress);
 
-	sword = Engine->LoadModel("content\\sword.fbx", nullptr);
-	Engine->GetMainCamera().View.SetOffset({ 0.0, 0.0, -200.0 });
+	Engine->GetMainCamera().View.SetOffset({ 0.0, 50.0, 0.0 });
 
 	Engine->StartGameLoop();
 
