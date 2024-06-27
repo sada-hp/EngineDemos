@@ -3,8 +3,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 project(DemoPrj)
 
-set(COPY_PATH ${DemoPrj_SOURCE_DIR}/bin)
-
 set(INCLUDE_GUI 1)
 
 if(INCLUDE_GUI)

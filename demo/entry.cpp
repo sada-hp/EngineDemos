@@ -2,7 +2,6 @@
 #include "engine.hpp"
 
 TVec3 CameraPYR;
-
 TVec2 Cursor = TVec2(0.0);
 double speed_mult = 1.0;
 float Sun = 1.0;
@@ -10,8 +9,11 @@ float Sun = 1.0;
 bool MousePressed = false;
 std::map<GR::EKey, GR::EAction> KeyStates;
 
+CloudProfileLayer CloudLayer{};
+
 void Loop(GR::GrayEngine* Context, double Delta)
 {
+	static CloudProfileLayer CurrentProfile = CloudLayer;
 	constexpr double StepTime = 1.0 / 60.0;
 	const double simulation_step = StepTime / Delta;
 	double angle = glm::mod(Context->GetTime(), 360.0);
@@ -30,6 +32,12 @@ void Loop(GR::GrayEngine* Context, double Delta)
 	if (KeyStates[GR::EKey::PageDown] != GR::EAction::Release) off.y -= speed_mult * simulation_step;
 
 	Context->GetMainCamera().View.Translate(off);
+
+	if (CurrentProfile != CloudLayer)
+	{
+		Context->GetRenderer().SetCloudLayerSettings(CloudLayer);
+		CurrentProfile = CloudLayer;
+	}
 }
 
 void UI(GR::GrayEngine* Context, double Delta)
@@ -42,10 +50,10 @@ void UI(GR::GrayEngine* Context, double Delta)
 	MousePressed = MousePressed && !ImGui::IsWindowHovered();
 
 	ImGui::SliderFloat("Sun position", &Sun, 0.0, 1.0);
-	ImGui::SliderFloat("Coverage", &Context->GetRenderer().CloudLayer.Coverage, 0.0, 1.0);
-	ImGui::SliderFloat("Vertical span", &Context->GetRenderer().CloudLayer.VerticalSpan, 0.0, 1.0);
-	ImGui::SliderFloat("Wind speed", &Context->GetRenderer().CloudLayer.WindSpeed, 0.0, 1.0);
-	ImGui::DragFloat("Absorption", &Context->GetRenderer().CloudLayer.Absorption, 1e-5, 0.0, 1.0, "%.5f");
+	ImGui::SliderFloat("Coverage", &CloudLayer.Coverage, 0.0, 1.0);
+	ImGui::SliderFloat("Vertical span", &CloudLayer.VerticalSpan, 0.0, 1.0);
+	ImGui::SliderFloat("Wind speed", &CloudLayer.WindSpeed, 0.0, 1.0);
+	ImGui::DragFloat("Absorption", &CloudLayer.Absorption, 1e-5, 0.0, 1.0, "%.5f");
 
 	ImGui::End();
 }
@@ -81,8 +89,8 @@ int main(int argc, char** argv)
 		exec_path = exec_path.substr(0, exec_path.find_last_of('\\') + 1);
 	}
 
-	ApplicationSettings Settings = { "Vulkan Application", {1024, 720} };
-	std::unique_ptr<GR::GrayEngine> Engine = std::make_unique<GR::GrayEngine>(exec_path, Settings);
+	ApplicationSettings Settings = { "Vulkan Application", { 1024, 720 } };
+	std::unique_ptr<GR::GrayEngine> Engine = std::make_unique<GR::GrayEngine>(argc, argv, Settings);
 
 	Engine->AddInputFunction(Loop);
 	Engine->AddInputFunction(UI);
@@ -92,6 +100,7 @@ int main(int argc, char** argv)
 	Engine->GetEventListener().Subscribe(MousePress);
 
 	Engine->GetMainCamera().View.SetOffset({ 0.0, 50.0, 0.0 });
+	Engine->GetRenderer().SetCloudLayerSettings(CloudLayer);
 
 	Engine->StartGameLoop();
 
