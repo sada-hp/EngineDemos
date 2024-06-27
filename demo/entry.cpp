@@ -1,5 +1,6 @@
 #include "pch.hpp"
 #include "engine.hpp"
+#include "converter.hpp"
 
 GR::Entity object;
 GR::Entity spheres[16];
@@ -27,24 +28,18 @@ void LoadMaterial(GR::GrayEngine* Context, int ID)
 	{
 	case 0:
 		Context->BindImage(Context->GetComponent<GRComponents::AlbedoMap>(object), "content\\brick_albedo.jpg", GR::EImageType::RGBA_SRGB);
-		Context->BindImage(Context->GetComponent<GRComponents::NormalMap>(object), "content\\brick_normal.jpg", GR::EImageType::RGBA_UNORM);
-		Context->BindImage(Context->GetComponent<GRComponents::RoughnessMap>(object), "content\\brick_roughness.jpg", GR::EImageType::RGBA_UNORM);
-		Context->BindImage(Context->GetComponent<GRComponents::AmbientMap>(object), "content\\brick_ao.jpg", GR::EImageType::RGBA_UNORM);
-		Context->BindImage(Context->GetComponent<GRComponents::DisplacementMap>(object), "content\\brick_height.jpg", GR::EImageType::RGBA_UNORM);
+		Context->BindImage(Context->GetComponent<GRComponents::NormalDisplacementMap>(object), "content\\brick_nh.png", GR::EImageType::RGBA_UNORM);
+		Context->BindImage(Context->GetComponent<GRComponents::AORoughnessMetallicMap>(object), "content\\brick_arm.jpg", GR::EImageType::RGBA_UNORM);
 		break;
 	case 1:
 		Context->BindImage(Context->GetComponent<GRComponents::AlbedoMap>(object), "content\\concrete_albedo.jpg", GR::EImageType::RGBA_SRGB);
-		Context->BindImage(Context->GetComponent<GRComponents::NormalMap>(object), "content\\concrete_normal.jpg", GR::EImageType::RGBA_UNORM);
-		Context->BindImage(Context->GetComponent<GRComponents::RoughnessMap>(object), "content\\concrete_roughness.jpg", GR::EImageType::RGBA_UNORM);
-		Context->BindImage(Context->GetComponent<GRComponents::AmbientMap>(object), "content\\concrete_ao.jpg", GR::EImageType::RGBA_UNORM);
-		Context->BindImage(Context->GetComponent<GRComponents::DisplacementMap>(object), "content\\concrete_height.jpg", GR::EImageType::RGBA_UNORM);
+		Context->BindImage(Context->GetComponent<GRComponents::NormalDisplacementMap>(object), "content\\concrete_nh.png", GR::EImageType::RGBA_UNORM);
+		Context->BindImage(Context->GetComponent<GRComponents::AORoughnessMetallicMap>(object), "content\\concrete_arm.jpg", GR::EImageType::RGBA_UNORM);
 		break;
 	case 2:
 		Context->BindImage(Context->GetComponent<GRComponents::AlbedoMap>(object), "content\\metal_albedo.jpg", GR::EImageType::RGBA_SRGB);
-		Context->BindImage(Context->GetComponent<GRComponents::NormalMap>(object), "content\\metal_normal.jpg", GR::EImageType::RGBA_UNORM);
-		Context->BindImage(Context->GetComponent<GRComponents::RoughnessMap>(object), "content\\metal_roughness.jpg", GR::EImageType::RGBA_UNORM);
-		Context->BindImage(Context->GetComponent<GRComponents::AmbientMap>(object), "content\\metal_ao.jpg", GR::EImageType::RGBA_UNORM);
-		Context->BindImage(Context->GetComponent<GRComponents::DisplacementMap>(object), "content\\metal_height.jpg", GR::EImageType::RGBA_UNORM);
+		Context->BindImage(Context->GetComponent<GRComponents::NormalDisplacementMap>(object), "content\\metal_nh.png", GR::EImageType::RGBA_UNORM);
+		Context->BindImage(Context->GetComponent<GRComponents::AORoughnessMetallicMap>(object), "content\\metal_arm.jpg", GR::EImageType::RGBA_UNORM);
 		break;
 	default:
 		break;
@@ -70,8 +65,8 @@ void LoadSpheresScene(GR::GrayEngine* Context)
 
 	GRShape::Sphere Shape;
 	Shape.radius = 10.f;
-	Shape.rings = 65u;
-	Shape.slices = 65u;
+	Shape.rings = 64u;
+	Shape.slices = 64u;
 
 	for (uint32_t i = 0; i < 4; i++)
 	{
@@ -97,9 +92,8 @@ void LoadGRaff(GR::GrayEngine* Context)
 	object = Context->AddMesh("content\\graff.obj");
 
 	Context->BindImage(Context->GetComponent<GRComponents::AlbedoMap>(object), "content\\graff_albedo.jpg", GR::EImageType::RGBA_SRGB);
-	Context->BindImage(Context->GetComponent<GRComponents::NormalMap>(object), "content\\graff_normal.jpg", GR::EImageType::RGBA_UNORM);
-	Context->BindImage(Context->GetComponent<GRComponents::RoughnessMap>(object), "content\\graff_roughness.jpg", GR::EImageType::RGBA_UNORM);
-	Context->BindImage(Context->GetComponent<GRComponents::AmbientMap>(object), "content\\graff_ao.jpg", GR::EImageType::RGBA_UNORM);
+	Context->BindImage(Context->GetComponent<GRComponents::NormalDisplacementMap>(object), "content\\graff_nh.png", GR::EImageType::RGBA_UNORM);
+	Context->BindImage(Context->GetComponent<GRComponents::AORoughnessMetallicMap>(object), "content\\graff_arm.jpg", GR::EImageType::RGBA_UNORM);
 	Context->GetComponent<GRComponents::Transform>(object).SetScale(2.0, 2.0, 2.0);
 
 	CameraPYR = { 0.0, glm::radians(180.0), 0.0 };
@@ -237,26 +231,35 @@ void MouseScroll(GR::GrayEngine* Context, GREvent::ScrollDelta Delta)
 	speed_mult = glm::clamp(speed_mult + 2.5f * Delta.y, 1.0, 100.0);
 }
 
+void LaunchConvert()
+{
+	// arm
+	GRConvert::ConvertImage_ARM("content\\brick_roughness.jpg", "", "content\\brick_ao.jpg", "content\\brick_arm.jpg");
+	GRConvert::ConvertImage_ARM("content\\concrete_roughness.jpg", "", "content\\concrete_ao.jpg", "content\\concrete_arm.jpg");
+	GRConvert::ConvertImage_ARM("content\\metal_roughness.jpg", "", "content\\metal_ao.jpg", "content\\metal_arm.jpg");
+	GRConvert::ConvertImage_ARM("content\\graff_roughness.jpg", "", "content\\graff_ao.jpg", "content\\graff_arm.jpg");
+
+	// nh
+	GRConvert::ConvertImage_NormalHeight("content\\brick_normal.jpg", "content\\brick_height.jpg", "content\\brick_nh.png");
+	GRConvert::ConvertImage_NormalHeight("content\\concrete_normal.jpg", "content\\concrete_height.jpg", "content\\concrete_nh.png");
+	GRConvert::ConvertImage_NormalHeight("content\\metal_normal.jpg", "content\\metal_height.jpg", "content\\metal_nh.png");
+	GRConvert::ConvertImage_NormalHeight("content\\graff_normal.jpg", "", "content\\graff_nh.png");
+}
+
 int main(int argc, char** argv)
 {
-	std::string exec_path = "";
-
-	if (argc > 0)
-	{
-		exec_path = argv[0];
-		exec_path = exec_path.substr(0, exec_path.find_last_of('\\') + 1);
-	}
-
 	ApplicationSettings Settings = { "Vulkan Application", { 1024u, 720u } };
-	TAuto<GR::GrayEngine> Engine = std::make_unique<GR::GrayEngine>(exec_path, Settings);
+	TAuto<GR::GrayEngine> Engine = std::make_unique<GR::GrayEngine>(argc, argv, Settings);
 
 	Engine->AddInputFunction(UpdateResources);
 	Engine->AddInputFunction(UI);
 	Engine->AddInputFunction(Loop);
+
 	Engine->GetEventListener().Subscribe(KeyPress);
 	Engine->GetEventListener().Subscribe(MouseMove);
 	Engine->GetEventListener().Subscribe(MousePress);
 	Engine->GetEventListener().Subscribe(MouseScroll);
+
 	Engine->StartGameLoop();
 
 	return 0;
