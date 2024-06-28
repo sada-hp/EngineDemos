@@ -61,6 +61,34 @@ void UI(GR::GrayEngine* Context, double Delta)
 void KeyPress(GR::GrayEngine* Context, GREvent::KeyPress Event)
 {
 	KeyStates[Event.key] = Event.action;
+
+	if (Event.action == GR::EAction::Press)
+	{
+		CloudLayerProfile Profile{};
+		switch (Event.key)
+		{
+		case GR::EKey::Key_1:
+			Sun = 1.0;
+			break;
+		case GR::EKey::Key_2:
+			Sun = 0.495;
+			break;
+		case GR::EKey::Key_3:
+			Sun = 0.52;
+			Profile.VerticalSpan = 0.0;
+			Profile.Coverage = 0.3;
+			break;
+		case GR::EKey::Key_4:
+			Sun = 0.5;
+			Profile.VerticalSpan = 0.49;
+			Profile.Coverage = 0.185;
+			break;
+		default:
+			break;
+		}
+
+		CloudLayer = Profile;
+	}
 }
 
 void MousePress(GR::GrayEngine* Context, GREvent::MousePress Event)
