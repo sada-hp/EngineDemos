@@ -208,6 +208,27 @@ void UI(GR::GrayEngine* Context, double Delta)
 void KeyPress(GR::GrayEngine* Context, GREvent::KeyPress Event)
 {
 	KeyStates[Event.key] = Event.action;
+
+	if (Event.action == GR::EAction::Press)
+	{
+		switch (Event.key)
+		{
+		case GR::EKey::Key_1:
+			Sun = 1.0;
+			break;
+		case GR::EKey::Key_2:
+			Sun = 0.85;
+			break;
+		case GR::EKey::Key_3:
+			Sun = 0.52;
+			break;
+		case GR::EKey::Key_4:
+			Sun = 0.505;
+			break;
+		default:
+			break;
+		}
+	}
 }
 
 void MousePress(GR::GrayEngine* Context, GREvent::MousePress Event)
