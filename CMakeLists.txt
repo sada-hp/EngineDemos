@@ -5,6 +5,8 @@ project(DemoPrj)
 
 set(INCLUDE_GUI 1)
 
+set(COPY_PATH ${DemoPrj_SOURCE_DIR}/bin)
+
 if(INCLUDE_GUI)
     add_compile_definitions(INCLUDE_GUI)
 endif()

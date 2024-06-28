@@ -9,11 +9,11 @@ float Sun = 1.0;
 bool MousePressed = false;
 std::map<GR::EKey, GR::EAction> KeyStates;
 
-CloudProfileLayer CloudLayer{};
+CloudLayerProfile CloudLayer{};
 
 void Loop(GR::GrayEngine* Context, double Delta)
 {
-	static CloudProfileLayer CurrentProfile = CloudLayer;
+	static CloudLayerProfile CurrentProfile = CloudLayer;
 	constexpr double StepTime = 1.0 / 60.0;
 	const double simulation_step = StepTime / Delta;
 	double angle = glm::mod(Context->GetTime(), 360.0);
@@ -81,14 +81,6 @@ void MouseMove(GR::GrayEngine* Context, GREvent::MousePosition Position)
 
 int main(int argc, char** argv)
 {
-	std::string exec_path = "";
-
-	if (argc > 0)
-	{
-		exec_path = argv[0];
-		exec_path = exec_path.substr(0, exec_path.find_last_of('\\') + 1);
-	}
-
 	ApplicationSettings Settings = { "Vulkan Application", { 1024, 720 } };
 	std::unique_ptr<GR::GrayEngine> Engine = std::make_unique<GR::GrayEngine>(argc, argv, Settings);
 
