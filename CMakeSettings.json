@@ -20,14 +20,7 @@
       "cmakeCommandArgs": "",
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
-      "inheritEnvironments": [ "msvc_x64_x64" ],
-      "variables": [
-        {
-          "name": "CMAKE_BUILD_TYPE",
-          "value": "Release",
-          "type": "STRING"
-        }
-      ]
+      "inheritEnvironments": [ "msvc_x64_x64" ]
     }
   ]
 }
