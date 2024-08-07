@@ -51,7 +51,7 @@ void LoadMaterialWall(GR::GrayEngine* Context)
 	Context->ClearEntities();
 
 	GRShape::Plane Shape;
-	Shape.scale = 20.f;
+	Shape.m_Scale = 20.f;
 
 	object = Context->AddShape(Shape);
 	CameraPYR = { 0.0, glm::radians(210.0), 0.0 };
@@ -64,9 +64,9 @@ void LoadSpheresScene(GR::GrayEngine* Context)
 	Context->ClearEntities();
 
 	GRShape::Sphere Shape;
-	Shape.radius = 10.f;
-	Shape.rings = 64u;
-	Shape.slices = 64u;
+	Shape.m_Radius = 10.f;
+	Shape.m_Rings = 64u;
+	Shape.m_Slices = 64u;
 
 	for (uint32_t i = 0; i < 4; i++)
 	{
@@ -75,9 +75,9 @@ void LoadSpheresScene(GR::GrayEngine* Context)
 			spheres[i] = Context->AddShape(Shape);
 
 			Context->GetComponent<GRComponents::Transform>(spheres[i]).SetOffset(TVec3(i * 25.0, j * 25.0 + 20.0, 0.0));
-			Context->EmplaceComponent<GRComponents::Color>(spheres[i], GRComponents::Color{ TVec3(1.0, 0.0, 0.0) });
-			Context->GetComponent<GRComponents::RoughnessMultiplier>(spheres[i]).R = (i + 1) * 0.25;
-			Context->GetComponent<GRComponents::MetallicOverride>(spheres[i]).M = (j + 1) * 0.25;
+			Context->EmplaceComponent<GRComponents::RGBColor>(spheres[i], GRComponents::RGBColor{ TVec3(1.0, 0.0, 0.0) });
+			Context->GetComponent<GRComponents::RoughnessMultiplier>(spheres[i]).Value = (i + 1) * 0.25;
+			Context->GetComponent<GRComponents::MetallicOverride>(spheres[i]).Value = (j + 1) * 0.25;
 		}
 	}
 
@@ -135,7 +135,7 @@ void Loop(GR::GrayEngine* Context, double Delta)
 	const double simulation_step = StepTime / Delta;
 	const double global_angle = glm::mod(Context->GetTime(), 360.0);
 	Context->GetWindow().SetTitle(("Vulkan Application " + std::format("{:.1f}", 1.0 / Delta)).c_str());
-	Context->GetRenderer().SunDirection = glm::normalize(glm::vec3(0.0, Sun * 2.0 - 1.0, Sun));
+	Context->GetRenderer().m_SunDirection = glm::normalize(glm::vec3(0.0, Sun * 2.0 - 1.0, Sun));
 
 	TVec3 off = TVec3(0.0);
 	if (KeyStates[GR::EKey::A] != GR::EAction::Release) off.x += speed_mult * simulation_step;
@@ -188,10 +188,10 @@ void UI(GR::GrayEngine* Context, double Delta)
 	if (LoadedScene == 0)
 	{
 		GRComponents::RoughnessMultiplier& RM = Context->GetComponent<GRComponents::RoughnessMultiplier>(object);
-		ImGui::SliderFloat("Roughness mult", &RM.R, 0.0, 1.0);
+		ImGui::SliderFloat("Roughness mult", &RM.Value, 0.0, 1.0);
 
 		GRComponents::DisplacementScale& HM = Context->GetComponent<GRComponents::DisplacementScale>(object);
-		ImGui::SliderFloat("Height mult", &HM.H, 0.1, 10.0);
+		ImGui::SliderFloat("Height mult", &HM.Value, 0.1, 10.0);
 
 		const char* Materials[3] = { "Brick", "Concrete", "Painted metal" };
 		ImGui::Combo("Materials", &MaterialID, Materials, 3);
@@ -199,7 +199,7 @@ void UI(GR::GrayEngine* Context, double Delta)
 	else if (LoadedScene == 2)
 	{
 		GRComponents::RoughnessMultiplier& RM = Context->GetComponent<GRComponents::RoughnessMultiplier>(object);
-		ImGui::SliderFloat("Roughness mult", &RM.R, 0.0, 1.0);
+		ImGui::SliderFloat("Roughness mult", &RM.Value, 0.0, 1.0);
 	}
 
 	ImGui::End();
