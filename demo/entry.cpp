@@ -19,7 +19,7 @@ void Loop(GR::GrayEngine* Context, double Delta)
 	double angle = glm::mod(Context->GetTime(), 360.0);
 
 	Context->GetWindow().SetTitle(("Vulkan Application " + std::format("{:.1f}", 1.0 / Delta)).c_str());
-	Context->GetRenderer().SunDirection = glm::normalize(glm::vec3(0.0, Sun * 2.0 - 1.0, Sun));
+	Context->GetRenderer().m_SunDirection = glm::normalize(glm::vec3(0.0, Sun * 2.0 - 1.0, Sun));
 
 	TVec3 off = TVec3(0.0);
 	if (KeyStates[GR::EKey::A] != GR::EAction::Release) off.x += speed_mult * simulation_step;
