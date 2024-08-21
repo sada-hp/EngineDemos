@@ -64,22 +64,26 @@ void KeyPress(GR::GrayEngine* Context, GREvent::KeyPress Event)
 
 	if (Event.action == GR::EAction::Press)
 	{
-		CloudLayerProfile Profile{};
+		CloudLayerProfile Profile = CloudLayer;
 		switch (Event.key)
 		{
 		case GR::EKey::Key_1:
 			Sun = 1.0;
+			Profile.VerticalSpan = 0.2;
+			Profile.Coverage = 0.185;
 			break;
 		case GR::EKey::Key_2:
+			Profile.VerticalSpan = 0.5;
+			Profile.Coverage = 0.2;
 			Sun = 0.495;
 			break;
 		case GR::EKey::Key_3:
 			Sun = 0.52;
 			Profile.VerticalSpan = 0.0;
-			Profile.Coverage = 0.3;
+			Profile.Coverage = 0.25;
 			break;
 		case GR::EKey::Key_4:
-			Sun = 0.5;
+			Sun = 0.45;
 			Profile.VerticalSpan = 0.49;
 			Profile.Coverage = 0.185;
 			break;
@@ -107,6 +111,11 @@ void MouseMove(GR::GrayEngine* Context, GREvent::MousePosition Position)
 	}
 }
 
+void MouseScroll(GR::GrayEngine* Context, GREvent::ScrollDelta Delta)
+{
+	speed_mult = glm::clamp(speed_mult + 2.5f * Delta.y, 1.0, 100.0);
+}
+
 int main(int argc, char** argv)
 {
 	ApplicationSettings Settings = { "Vulkan Application", { 1024, 720 } };
@@ -118,6 +127,7 @@ int main(int argc, char** argv)
 	Engine->GetEventListener().Subscribe(KeyPress);
 	Engine->GetEventListener().Subscribe(MouseMove);
 	Engine->GetEventListener().Subscribe(MousePress);
+	Engine->GetEventListener().Subscribe(MouseScroll);
 
 	Engine->GetMainCamera().View.SetOffset({ 0.0, 50.0, 0.0 });
 	Engine->GetRenderer().SetCloudLayerSettings(CloudLayer);
