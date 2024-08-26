@@ -19,9 +19,9 @@ void Loop(GR::GrayEngine* Context, double Delta)
 	double angle = glm::mod(Context->GetTime(), 360.0);
 
 	Context->GetWindow().SetTitle(("Vulkan Application " + std::format("{:.1f}", 1.0 / Delta)).c_str());
-	Context->GetRenderer().m_SunDirection = glm::normalize(glm::vec3(0.0, Sun * 2.0 - 1.0, Sun));
+	Context->GetRenderer().m_SunDirection = glm::normalize(glm::vec3(0.0, Sun * 2.0 - 1.0, 1.0));
 
-	TVec3 off = TVec3(0.0);
+	TDVec3 off = TDVec3(0.0);
 	if (KeyStates[GR::EKey::A] != GR::EAction::Release) off.x += speed_mult * simulation_step;
 	if (KeyStates[GR::EKey::D] != GR::EAction::Release) off.x -= speed_mult * simulation_step;
 
@@ -32,6 +32,21 @@ void Loop(GR::GrayEngine* Context, double Delta)
 	if (KeyStates[GR::EKey::PageDown] != GR::EAction::Release) off.y -= speed_mult * simulation_step;
 
 	Context->GetMainCamera().View.Translate(off);
+
+	TVec3 U = glm::normalize(TDVec3(0.0, Context->GetRenderer().Rg, 0.0) + Context->GetMainCamera().View.GetOffset());
+	TQuat p = glm::rotation(glm::vec3(0.0, 1.0, 0.0), U);
+
+	TQuat q = glm::angleAxis(CameraPYR.y, U);
+	q = q * glm::angleAxis(CameraPYR.z, p * glm::vec3(0, 0, 1));
+	q = q * glm::angleAxis(-CameraPYR.x, p * glm::vec3(1, 0, 0));
+
+	glm::mat3 M = glm::mat3_cast(q * p);
+
+	Context->GetMainCamera().View.matrix[0] = glm::dvec4(glm::normalize(M[0]), 0.0);
+	Context->GetMainCamera().View.matrix[1] = glm::dvec4(glm::normalize(M[1]), 0.0);
+	Context->GetMainCamera().View.matrix[2] = glm::dvec4(glm::normalize(M[2]), 0.0);
+
+	//printf("%f %f %f\n", Context->GetMainCamera().View.GetOffset().x, Context->GetMainCamera().View.GetOffset().y, Context->GetMainCamera().View.GetOffset().z);
 
 	if (CurrentProfile != CloudLayer)
 	{
@@ -106,14 +121,13 @@ void MouseMove(GR::GrayEngine* Context, GREvent::MousePosition Position)
 	if (MousePressed)
 	{
 		CameraPYR += glm::radians(TVec3(Cursor.y - Position.y, Cursor.x - Position.x, 0.0));
-		Context->GetMainCamera().View.SetRotation(CameraPYR.x, CameraPYR.y, CameraPYR.z);
 		Cursor = { Position.x, Position.y };
 	}
 }
 
 void MouseScroll(GR::GrayEngine* Context, GREvent::ScrollDelta Delta)
 {
-	speed_mult = glm::clamp(speed_mult + 2.5f * Delta.y, 1.0, 100.0);
+	speed_mult = glm::clamp(speed_mult + 2.5f * Delta.y, 1.0, 10000.0);
 }
 
 int main(int argc, char** argv)
