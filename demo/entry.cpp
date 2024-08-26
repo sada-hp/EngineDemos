@@ -74,7 +74,7 @@ void LoadSpheresScene(GR::GrayEngine* Context)
 		{
 			spheres[i] = Context->AddShape(Shape);
 
-			Context->GetComponent<GRComponents::Transform>(spheres[i]).SetOffset(TVec3(i * 25.0, j * 25.0 + 20.0, 0.0));
+			Context->GetComponent<GRComponents::Transform<float>>(spheres[i]).SetOffset(TVec3(i * 25.0, j * 25.0 + 20.0, 0.0));
 			Context->EmplaceComponent<GRComponents::RGBColor>(spheres[i], GRComponents::RGBColor{ TVec3(1.0, 0.0, 0.0) });
 			Context->GetComponent<GRComponents::RoughnessMultiplier>(spheres[i]).Value = (i + 1) * 0.25;
 			Context->GetComponent<GRComponents::MetallicOverride>(spheres[i]).Value = (j + 1) * 0.25;
@@ -94,7 +94,7 @@ void LoadGRaff(GR::GrayEngine* Context)
 	Context->BindImage(Context->GetComponent<GRComponents::AlbedoMap>(object), "content\\graff_albedo.jpg", GR::EImageType::RGBA_SRGB);
 	Context->BindImage(Context->GetComponent<GRComponents::NormalDisplacementMap>(object), "content\\graff_nh.png", GR::EImageType::RGBA_UNORM);
 	Context->BindImage(Context->GetComponent<GRComponents::AORoughnessMetallicMap>(object), "content\\graff_arm.jpg", GR::EImageType::RGBA_UNORM);
-	Context->GetComponent<GRComponents::Transform>(object).SetScale(2.0, 2.0, 2.0);
+	Context->GetComponent<GRComponents::Transform<float>>(object).SetScale(2.0, 2.0, 2.0);
 
 	CameraPYR = { 0.0, glm::radians(180.0), 0.0 };
 	Context->GetMainCamera().View.SetOffset({ -2.5, 55.0, 35.0 });
@@ -149,16 +149,29 @@ void Loop(GR::GrayEngine* Context, double Delta)
 	
 	Context->GetMainCamera().View.Translate(off);
 
+	TVec3 U = glm::normalize(TDVec3(0.0, Context->GetRenderer().Rg, 0.0) + Context->GetMainCamera().View.GetOffset());
+	TQuat p = glm::rotation(glm::vec3(0.0, 1.0, 0.0), U);
+
+	TQuat q = glm::angleAxis(CameraPYR.y, U);
+	q = q * glm::angleAxis(CameraPYR.z, p * glm::vec3(0, 0, 1));
+	q = q * glm::angleAxis(-CameraPYR.x, p * glm::vec3(1, 0, 0));
+
+	glm::mat3 M = glm::mat3_cast(q * p);
+
+	Context->GetMainCamera().View.matrix[0] = glm::dvec4(glm::normalize(M[0]), 0.0);
+	Context->GetMainCamera().View.matrix[1] = glm::dvec4(glm::normalize(M[1]), 0.0);
+	Context->GetMainCamera().View.matrix[2] = glm::dvec4(glm::normalize(M[2]), 0.0);
+
 	if (LoadedScene == 0)
 	{
-		GRComponents::Transform& wld = Context->GetComponent<GRComponents::Transform>(object);
+		GRComponents::Transform<float>& wld = Context->GetComponent<GRComponents::Transform<float>>(object);
 		wld.SetOffset(TVec3(0.0, 50.0, 0.0));
 		wld.SetRotation(glm::radians(-90.0), 0.0, 0.0);
 		wld.SetOffset(TVec3(0.0, 50.0 + glm::sin(global_angle) * 2.5, 0.0));
 	}
 	else if (LoadedScene == 2)
 	{
-		GRComponents::Transform& wld = Context->GetComponent<GRComponents::Transform>(object);
+		GRComponents::Transform<float>& wld = Context->GetComponent<GRComponents::Transform<float>>(object);
 		wld.SetOffset(TVec3(0.0, 50.0 + glm::sin(global_angle) * 2.5, 0.0));
 		wld.Rotate(0.0, 0.01, 0.0);
 	}
@@ -242,7 +255,6 @@ void MouseMove(GR::GrayEngine* Context, GREvent::MousePosition Position)
 	if (MousePressed)
 	{
 		CameraPYR += glm::radians(TVec3(Cursor.y - Position.y, Cursor.x - Position.x, 0.0));
-		Context->GetMainCamera().View.SetRotation(CameraPYR.x, CameraPYR.y, CameraPYR.z);
 		Cursor = { Position.x, Position.y };
 	}
 }
