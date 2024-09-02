@@ -1,14 +1,19 @@
 #include "pch.hpp"
-#include "Engine/engine.hpp"
-#include "Engine/converter.hpp"
+#include "Engine/utils.hpp"
+#include "Engine/world.hpp"
+#include "Engine/window.hpp"
+#include "Engine/event_listener.hpp"
 
-GR::Entity object;
-GR::Entity spheres[16];
+std::string path;
 
-TVec3 CameraPYR = TVec3(0.0);
-TVec2 Cursor = TVec2(0.0);
+using namespace GR;
 
-double speed_mult = 1.0;
+std::map<GR::EKey, GR::EAction> KeyStates;
+glm::vec3 CameraPYR = glm::vec3(0.0);
+glm::vec2 Cursor = glm::vec2(0.0);
+
+bool MousePressed = false;
+double speed_mult = 25.0;
 float Sun = 1.0;
 
 int MaterialID = 0;
@@ -17,107 +22,131 @@ int LoadedMaterial = -1;
 int SceneID = 0;
 int LoadedScene = -1;
 
-bool MousePressed = false;
-std::map<GR::EKey, GR::EAction> KeyStates;
-
-constexpr double StepTime = 1.0 / 60.0;
-
-void LoadMaterial(GR::GrayEngine* Context, int ID)
+void MousePress(GREvent::MousePress Event, void* Data)
 {
+	Window* wnd = static_cast<Window*>(Data);
+	Cursor = wnd->GetCursorPos();
+	MousePressed = (Event.action != EAction::Release);
+};
+
+void MouseMove(GREvent::MousePosition Event, void* Data)
+{
+	if (MousePressed)
+	{
+		CameraPYR += glm::radians(glm::vec3(Cursor.y - Event.y, Cursor.x - Event.x, 0.0));
+		Cursor = { Event.x, Event.y };
+	}
+};
+
+void MouseScroll(GREvent::ScrollDelta Event, void* Data)
+{
+	speed_mult = glm::clamp(speed_mult + 100.0 * Event.y, 1.0, 10000.0);
+};
+
+void KeyPress(GREvent::KeyPress Event, void* Data)
+{
+	KeyStates[Event.key] = Event.action;
+};
+
+void LoadMaterial(World& world, int ID)
+{
+	Entity ent = world.Registry.view<Entity>().front();
 	switch (ID)
 	{
 	case 0:
-		Context->BindImage(Context->GetComponent<GRComponents::AlbedoMap>(object), "content\\brick_albedo.jpg", GR::EImageType::RGBA_SRGB);
-		Context->BindImage(Context->GetComponent<GRComponents::NormalDisplacementMap>(object), "content\\brick_nh.png", GR::EImageType::RGBA_UNORM);
-		Context->BindImage(Context->GetComponent<GRComponents::AORoughnessMetallicMap>(object), "content\\brick_arm.jpg", GR::EImageType::RGBA_UNORM);
+		world.BindTexture(world.GetComponent<GRComponents::AlbedoMap>(ent), "content\\brick_albedo.jpg");
+		world.BindTexture(world.GetComponent<GRComponents::NormalDisplacementMap>(ent), "content\\brick_nh.png");
+		world.BindTexture(world.GetComponent<GRComponents::AORoughnessMetallicMap>(ent), "content\\brick_arm.jpg");
 		break;
 	case 1:
-		Context->BindImage(Context->GetComponent<GRComponents::AlbedoMap>(object), "content\\concrete_albedo.jpg", GR::EImageType::RGBA_SRGB);
-		Context->BindImage(Context->GetComponent<GRComponents::NormalDisplacementMap>(object), "content\\concrete_nh.png", GR::EImageType::RGBA_UNORM);
-		Context->BindImage(Context->GetComponent<GRComponents::AORoughnessMetallicMap>(object), "content\\concrete_arm.jpg", GR::EImageType::RGBA_UNORM);
+		world.BindTexture(world.GetComponent<GRComponents::AlbedoMap>(ent), "content\\concrete_albedo.jpg");
+		world.BindTexture(world.GetComponent<GRComponents::NormalDisplacementMap>(ent), "content\\concrete_nh.png");
+		world.BindTexture(world.GetComponent<GRComponents::AORoughnessMetallicMap>(ent), "content\\concrete_arm.jpg");
 		break;
 	case 2:
-		Context->BindImage(Context->GetComponent<GRComponents::AlbedoMap>(object), "content\\metal_albedo.jpg", GR::EImageType::RGBA_SRGB);
-		Context->BindImage(Context->GetComponent<GRComponents::NormalDisplacementMap>(object), "content\\metal_nh.png", GR::EImageType::RGBA_UNORM);
-		Context->BindImage(Context->GetComponent<GRComponents::AORoughnessMetallicMap>(object), "content\\metal_arm.jpg", GR::EImageType::RGBA_UNORM);
+		world.BindTexture(world.GetComponent<GRComponents::AlbedoMap>(ent), "content\\metal_albedo.jpg");
+		world.BindTexture(world.GetComponent<GRComponents::NormalDisplacementMap>(ent), "content\\metal_nh.png");
+		world.BindTexture(world.GetComponent<GRComponents::AORoughnessMetallicMap>(ent), "content\\metal_arm.jpg");
 		break;
 	default:
 		break;
 	}
-}
+};
 
-void LoadMaterialWall(GR::GrayEngine* Context)
+void LoadSpheresScene(Camera& camera, World& world)
 {
-	Context->ClearEntities();
+	world.Clear();
 
-	GRShape::Plane Shape;
-	Shape.m_Scale = 20.f;
-
-	object = Context->AddShape(Shape);
-	CameraPYR = { 0.0, glm::radians(210.0), 0.0 };
-	Context->GetMainCamera().View.SetOffset({ 10.0, 50.0, 20.0 });
-	Context->GetMainCamera().View.SetRotation(CameraPYR.x, CameraPYR.y, CameraPYR.z);
-}
-
-void LoadSpheresScene(GR::GrayEngine* Context)
-{
-	Context->ClearEntities();
-
-	GRShape::Sphere Shape;
-	Shape.m_Radius = 10.f;
-	Shape.m_Rings = 64u;
-	Shape.m_Slices = 64u;
+	Sphere shape;
+	shape.m_Radius = 10.f;
+	shape.m_Rings = 64u;
+	shape.m_Slices = 64u;
 
 	for (uint32_t i = 0; i < 4; i++)
 	{
 		for (uint32_t j = 0; j < 4; j++)
 		{
-			spheres[i] = Context->AddShape(Shape);
-
-			Context->GetComponent<GRComponents::Transform<float>>(spheres[i]).SetOffset(TVec3(i * 25.0, j * 25.0 + 20.0, 0.0));
-			Context->EmplaceComponent<GRComponents::RGBColor>(spheres[i], GRComponents::RGBColor{ TVec3(1.0, 0.0, 0.0) });
-			Context->GetComponent<GRComponents::RoughnessMultiplier>(spheres[i]).Value = (i + 1) * 0.25;
-			Context->GetComponent<GRComponents::MetallicOverride>(spheres[i]).Value = (j + 1) * 0.25;
+			Entity ent = world.AddShape(shape);
+			world.GetComponent<GRComponents::Transform<float>>(ent).SetOffset(glm::vec3(i * 25.0, j * 25.0 + 20.0, 0.0));
+			world.GetComponent<GRComponents::RGBColor>(ent).Value = glm::vec3(1.0, 0.0, 0.0);
+			world.GetComponent<GRComponents::RoughnessMultiplier>(ent).Value = (i + 1) * 0.25;
+			world.GetComponent<GRComponents::MetallicOverride>(ent).Value = (j + 1) * 0.25;
 		}
 	}
 
 	CameraPYR = { 0.0, glm::radians(180.0), 0.0 };
-	Context->GetMainCamera().View.SetOffset({ 35.0, 55.0, 150.0 });
-	Context->GetMainCamera().View.SetRotation(CameraPYR.x, CameraPYR.y, CameraPYR.z);
-}
+	camera.View.SetOffset({ 35.0, 55.0, 150.0 });
+	camera.View.SetRotation(CameraPYR.x, CameraPYR.y, CameraPYR.z);
+};
 
-void LoadGRaff(GR::GrayEngine* Context)
+void LoadGRaff(Camera& camera, World& world)
 {
-	Context->ClearEntities();
-	object = Context->AddMesh("content\\graff.obj");
+	world.Clear();
 
-	Context->BindImage(Context->GetComponent<GRComponents::AlbedoMap>(object), "content\\graff_albedo.jpg", GR::EImageType::RGBA_SRGB);
-	Context->BindImage(Context->GetComponent<GRComponents::NormalDisplacementMap>(object), "content\\graff_nh.png", GR::EImageType::RGBA_UNORM);
-	Context->BindImage(Context->GetComponent<GRComponents::AORoughnessMetallicMap>(object), "content\\graff_arm.jpg", GR::EImageType::RGBA_UNORM);
-	Context->GetComponent<GRComponents::Transform<float>>(object).SetScale(2.0, 2.0, 2.0);
+	Mesh shape;
+	shape.path = path + "content\\graff.obj";
+	Entity ent = world.AddShape(shape);
+
+	world.BindTexture(world.GetComponent<GRComponents::AlbedoMap>(ent), "content\\graff_albedo.jpg");
+	world.BindTexture(world.GetComponent<GRComponents::NormalDisplacementMap>(ent), "content\\graff_nh.png");
+	world.BindTexture(world.GetComponent<GRComponents::AORoughnessMetallicMap>(ent), "content\\graff_arm.jpg");
+	world.GetComponent<GRComponents::Transform<float>>(ent).SetScale(2.0, 2.0, 2.0);
 
 	CameraPYR = { 0.0, glm::radians(180.0), 0.0 };
-	Context->GetMainCamera().View.SetOffset({ -2.5, 55.0, 35.0 });
-	Context->GetMainCamera().View.SetRotation(CameraPYR.x, CameraPYR.y, CameraPYR.z);
-}
+	camera.View.SetOffset({ -2.5, 55.0, 35.0 });
+	camera.View.SetRotation(CameraPYR.x, CameraPYR.y, CameraPYR.z);
+};
 
-void UpdateResources(GR::GrayEngine* Context, double Delta)
+void LoadMaterialWall(Camera& camera, World& world)
+{
+	world.Clear();
+
+	Plane shape;
+	shape.m_Scale = 20.f;
+
+	Entity ent = world.AddShape(shape);
+	CameraPYR = { 0.0, glm::radians(210.0), 0.0 };
+	camera.View.SetOffset({ 10.0, 50.0, 20.0 });
+	camera.View.SetRotation(CameraPYR.x, CameraPYR.y, CameraPYR.z);
+};
+
+inline void UpdateResources(Camera& camera, World& world)
 {
 	if (LoadedScene != SceneID)
 	{
 		if (SceneID == 0)
 		{
-			LoadMaterialWall(Context);
-			LoadMaterial(Context, MaterialID);
+			LoadMaterialWall(camera, world);
+			LoadMaterial(world, MaterialID);
 			LoadedMaterial = MaterialID;
 		}
 		else if (SceneID == 1)
 		{
-			LoadSpheresScene(Context);
+			LoadSpheresScene(camera, world);
 		}
 		else
 		{
-			LoadGRaff(Context);
+			LoadGRaff(camera, world);
 		}
 
 		LoadedScene = SceneID;
@@ -125,63 +154,64 @@ void UpdateResources(GR::GrayEngine* Context, double Delta)
 
 	if (LoadedMaterial != MaterialID)
 	{
-		LoadMaterial(Context, MaterialID);
+		LoadMaterial(world, MaterialID);
 		LoadedMaterial = MaterialID;
 	}
-}
+};
 
-void Loop(GR::GrayEngine* Context, double Delta)
+inline void ControlCamera(GR::Camera& camera, double delta)
 {
-	const double simulation_step = StepTime / Delta;
-	const double global_angle = glm::mod(Context->GetTime(), 360.0);
-	Context->GetWindow().SetTitle(("Vulkan Application " + std::format("{:.1f}", 1.0 / Delta)).c_str());
-	Context->GetRenderer().m_SunDirection = glm::normalize(glm::vec3(0.0, Sun * 2.0 - 1.0, Sun));
+	glm::dvec3 off = glm::dvec3(0.0);
+	if (KeyStates[EKey::A] != EAction::Release) off.x += speed_mult * delta;
+	if (KeyStates[EKey::D] != EAction::Release) off.x -= speed_mult * delta;
 
-	TVec3 off = TVec3(0.0);
-	if (KeyStates[GR::EKey::A] != GR::EAction::Release) off.x += speed_mult * simulation_step;
-	if (KeyStates[GR::EKey::D] != GR::EAction::Release) off.x -= speed_mult * simulation_step;
+	if (KeyStates[EKey::W] != EAction::Release) off.z += speed_mult * delta;
+	if (KeyStates[EKey::S] != EAction::Release) off.z -= speed_mult * delta;
 
-	if (KeyStates[GR::EKey::W] != GR::EAction::Release) off.z += speed_mult * simulation_step;
-	if (KeyStates[GR::EKey::S] != GR::EAction::Release) off.z -= speed_mult * simulation_step;
+	if (KeyStates[EKey::PageUp] != EAction::Release) off.y += speed_mult * delta;
+	if (KeyStates[EKey::PageDown] != EAction::Release) off.y -= speed_mult * delta;
 
-	if (KeyStates[GR::EKey::PageUp] != GR::EAction::Release) off.y += speed_mult * simulation_step;
-	if (KeyStates[GR::EKey::PageDown] != GR::EAction::Release) off.y -= speed_mult * simulation_step;
-	
-	Context->GetMainCamera().View.Translate(off);
+	camera.View.Translate(off);
 
-	TVec3 U = glm::normalize(TDVec3(0.0, Context->GetRenderer().Rg, 0.0) + Context->GetMainCamera().View.GetOffset());
-	TQuat p = glm::rotation(glm::vec3(0.0, 1.0, 0.0), U);
+	glm::vec3 U = glm::normalize(glm::dvec3(0.0, Renderer::Rg, 0.0) + camera.View.GetOffset());
+	glm::quat p = glm::rotation(glm::vec3(0.0, 1.0, 0.0), U);
 
-	TQuat q = glm::angleAxis(CameraPYR.y, U);
+	glm::quat q = angleAxis(CameraPYR.y, U);
 	q = q * glm::angleAxis(CameraPYR.z, p * glm::vec3(0, 0, 1));
 	q = q * glm::angleAxis(-CameraPYR.x, p * glm::vec3(1, 0, 0));
 
 	glm::mat3 M = glm::mat3_cast(q * p);
 
-	Context->GetMainCamera().View.matrix[0] = glm::dvec4(glm::normalize(M[0]), 0.0);
-	Context->GetMainCamera().View.matrix[1] = glm::dvec4(glm::normalize(M[1]), 0.0);
-	Context->GetMainCamera().View.matrix[2] = glm::dvec4(glm::normalize(M[2]), 0.0);
+	camera.View.matrix[0] = glm::dvec4(glm::normalize(M[0]), 0.0);
+	camera.View.matrix[1] = glm::dvec4(glm::normalize(M[1]), 0.0);
+	camera.View.matrix[2] = glm::dvec4(glm::normalize(M[2]), 0.0);
+};
+
+inline void ControlWorld(Renderer& renderer, World& world, double Delta)
+{
+	const double global_angle = glm::mod(GetTime(), 360.0);
+	renderer.m_SunDirection = glm::normalize(glm::vec3(0.0, Sun * 2.0 - 1.0, Sun));
 
 	if (LoadedScene == 0)
 	{
-		GRComponents::Transform<float>& wld = Context->GetComponent<GRComponents::Transform<float>>(object);
-		wld.SetOffset(TVec3(0.0, 50.0, 0.0));
+		GRComponents::Transform<float>& wld = world.GetComponent<GRComponents::Transform<float>>(world.Registry.view<Entity>().front());
+		wld.SetOffset(glm::vec3(0.0, 50.0, 0.0));
 		wld.SetRotation(glm::radians(-90.0), 0.0, 0.0);
-		wld.SetOffset(TVec3(0.0, 50.0 + glm::sin(global_angle) * 2.5, 0.0));
+		wld.SetOffset(glm::vec3(0.0, 50.0 + glm::sin(global_angle) * 2.5, 0.0));
 	}
 	else if (LoadedScene == 2)
 	{
-		GRComponents::Transform<float>& wld = Context->GetComponent<GRComponents::Transform<float>>(object);
-		wld.SetOffset(TVec3(0.0, 50.0 + glm::sin(global_angle) * 2.5, 0.0));
+		GRComponents::Transform<float>& wld = world.GetComponent<GRComponents::Transform<float>>(world.Registry.view<Entity>().front());
+		wld.SetOffset(glm::vec3(0.0, 50.0 + glm::sin(global_angle) * 2.5, 0.0));
 		wld.Rotate(0.0, 0.01, 0.0);
 	}
-}
+};
 
-void UI(GR::GrayEngine* Context, double Delta)
+inline void UpdateUI(Renderer& renderer, World& world)
 {
 	if (LoadedScene == -1 || LoadedScene != SceneID) return;
 
-	ImGui::SetCurrentContext(Context->GetGUIContext());
+	ImGui::SetCurrentContext(renderer.GetImguiContext());
 
 	ImGui::Begin("Settings", 0, ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysAutoResize);
 	ImGui::SetWindowPos({ 0, 0 });
@@ -200,10 +230,10 @@ void UI(GR::GrayEngine* Context, double Delta)
 
 	if (LoadedScene == 0)
 	{
-		GRComponents::RoughnessMultiplier& RM = Context->GetComponent<GRComponents::RoughnessMultiplier>(object);
+		GRComponents::RoughnessMultiplier& RM = world.GetComponent<GRComponents::RoughnessMultiplier>(world.Registry.view<Entity>().front());
 		ImGui::SliderFloat("Roughness mult", &RM.Value, 0.0, 1.0);
 
-		GRComponents::DisplacementScale& HM = Context->GetComponent<GRComponents::DisplacementScale>(object);
+		GRComponents::DisplacementScale& HM = world.GetComponent<GRComponents::DisplacementScale>(world.Registry.view<Entity>().front());
 		ImGui::SliderFloat("Height mult", &HM.Value, 0.1, 10.0);
 
 		const char* Materials[3] = { "Brick", "Concrete", "Painted metal" };
@@ -211,89 +241,60 @@ void UI(GR::GrayEngine* Context, double Delta)
 	}
 	else if (LoadedScene == 2)
 	{
-		GRComponents::RoughnessMultiplier& RM = Context->GetComponent<GRComponents::RoughnessMultiplier>(object);
+		GRComponents::RoughnessMultiplier& RM = world.GetComponent<GRComponents::RoughnessMultiplier>(world.Registry.view<Entity>().front());
 		ImGui::SliderFloat("Roughness mult", &RM.Value, 0.0, 1.0);
 	}
 
 	ImGui::End();
 }
 
-void KeyPress(GR::GrayEngine* Context, GREvent::KeyPress Event)
+int main(int argc, const char** argv)
 {
-	KeyStates[Event.key] = Event.action;
-
-	if (Event.action == GR::EAction::Press)
+	if (argc > 0)
 	{
-		switch (Event.key)
-		{
-		case GR::EKey::Key_1:
-			Sun = 1.0;
-			break;
-		case GR::EKey::Key_2:
-			Sun = 0.85;
-			break;
-		case GR::EKey::Key_3:
-			Sun = 0.52;
-			break;
-		case GR::EKey::Key_4:
-			Sun = 0.505;
-			break;
-		default:
-			break;
-		}
+		path = argv[0];
+		path = path.substr(0, path.find_last_of('\\') + 1);
 	}
-}
 
-void MousePress(GR::GrayEngine* Context, GREvent::MousePress Event)
-{
-	Cursor = Context->GetWindow().GetCursorPos();
-	MousePressed = (Event.action != GR::EAction::Release);
-}
+	// Systems setup
+	Window window(1024, 720, "PBR materials demo");
+	Renderer& renderer = window.GetRenderer();
+	Camera& camera = renderer.m_Camera;
+	EventListener listener = {};
+	World world(renderer);
 
-void MouseMove(GR::GrayEngine* Context, GREvent::MousePosition Position)
-{
-	if (MousePressed)
+	// Events setup
+	window.SetUpEvents(listener);
+	listener.SetUserPointer(&window);
+	listener.Subscribe(MouseScroll);
+	listener.Subscribe(MousePress);
+	listener.Subscribe(MouseMove);
+	listener.Subscribe(KeyPress);
+
+	// Rendering
+	double delta = 0.0;
+	auto last_time = GetTime();
+	while (window.IsAlive())
 	{
-		CameraPYR += glm::radians(TVec3(Cursor.y - Position.y, Cursor.x - Position.x, 0.0));
-		Cursor = { Position.x, Position.y };
+		// Update delta
+		auto time = GetTime();
+		delta = time - last_time;
+		window.SetTitle(("PBR materials demo " + std::format("{:.1f}", 1.0 / delta)).c_str());
+		last_time = time;
+
+		// Update simulation
+		window.ProcessEvents();
+		ControlCamera(camera, delta);
+		UpdateResources(camera, world);
+		ControlWorld(renderer, world, delta);
+
+		// Render frame
+		renderer.BeginFrame(delta);
+
+		world.DrawScene();
+		UpdateUI(renderer, world);
+
+		renderer.EndFrame();
 	}
-}
-
-void MouseScroll(GR::GrayEngine* Context, GREvent::ScrollDelta Delta)
-{
-	speed_mult = glm::clamp(speed_mult + 2.5f * Delta.y, 1.0, 100.0);
-}
-
-void LaunchConvert()
-{
-	// arm
-	GRConvert::ConvertImage_ARM("content\\brick_roughness.jpg", "", "content\\brick_ao.jpg", "content\\brick_arm.jpg");
-	GRConvert::ConvertImage_ARM("content\\concrete_roughness.jpg", "", "content\\concrete_ao.jpg", "content\\concrete_arm.jpg");
-	GRConvert::ConvertImage_ARM("content\\metal_roughness.jpg", "", "content\\metal_ao.jpg", "content\\metal_arm.jpg");
-	GRConvert::ConvertImage_ARM("content\\graff_roughness.jpg", "", "content\\graff_ao.jpg", "content\\graff_arm.jpg");
-
-	// nh
-	GRConvert::ConvertImage_NormalHeight("content\\brick_normal.jpg", "content\\brick_height.jpg", "content\\brick_nh.png");
-	GRConvert::ConvertImage_NormalHeight("content\\concrete_normal.jpg", "content\\concrete_height.jpg", "content\\concrete_nh.png");
-	GRConvert::ConvertImage_NormalHeight("content\\metal_normal.jpg", "content\\metal_height.jpg", "content\\metal_nh.png");
-	GRConvert::ConvertImage_NormalHeight("content\\graff_normal.jpg", "", "content\\graff_nh.png");
-}
-
-int main(int argc, char** argv)
-{
-	ApplicationSettings Settings = { "Vulkan Application", { 1024u, 720u } };
-	TAuto<GR::GrayEngine> Engine = std::make_unique<GR::GrayEngine>(argc, argv, Settings);
-
-	Engine->AddInputFunction(UpdateResources);
-	Engine->AddInputFunction(UI);
-	Engine->AddInputFunction(Loop);
-
-	Engine->GetEventListener().Subscribe(KeyPress);
-	Engine->GetEventListener().Subscribe(MouseMove);
-	Engine->GetEventListener().Subscribe(MousePress);
-	Engine->GetEventListener().Subscribe(MouseScroll);
-
-	Engine->StartGameLoop();
-
-	return 0;
-}
+	world.Clear();
+};
