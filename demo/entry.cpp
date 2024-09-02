@@ -2,27 +2,26 @@
 #include "imgui/imgui.h"
 #include "Engine/utils.hpp"
 #include "Engine/window.hpp"
+#include "physics_world.hpp"
 #include "Engine/event_listener.hpp"
 
 using namespace GR;
 
 glm::vec3 CameraPYR;
 glm::vec2 Cursor = glm::vec2(0.0);
-std::map<EKey, EAction> KeyStates;
-CloudLayerProfile CloudLayer{};
-CloudLayerProfile CloudLayer_Old{};
+std::map<Enums::EKey, Enums::EAction> KeyStates;
 bool MousePressed = false;
-double speed_mult = 100.0;
+double speed_mult = 1.0;
 float Sun = 1.0;
 
-void MousePress(GREvent::MousePress Event, void* Data)
+void MousePress(Events::MousePress Event, void* Data)
 {
 	Window* wnd = static_cast<Window*>(Data);
 	Cursor = wnd->GetCursorPos();
-	MousePressed = (Event.action != EAction::Release);
+	MousePressed = (Event.action != Enums::EAction::Release);
 };
 
-void MouseMove(GREvent::MousePosition Event, void* Data)
+void MouseMove(Events::MousePosition Event, void* Data)
 {
 	if (MousePressed)
 	{
@@ -31,47 +30,43 @@ void MouseMove(GREvent::MousePosition Event, void* Data)
 	}
 };
 
-void MouseScroll(GREvent::ScrollDelta Event, void* Data)
+void MouseScroll(Events::ScrollDelta Event, void* Data)
 {
-	speed_mult = glm::clamp(speed_mult + 100.0 * Event.y, 1.0, 10000.0);
+	speed_mult = glm::clamp(speed_mult + 10.0 * Event.y, 1.0, 10000.0);
 };
 
-void KeyPress(GREvent::KeyPress Event, void* Data)
+void KeyPress(Events::KeyPress Event, void* Data)
 {
 	KeyStates[Event.key] = Event.action;
-
-	if (Event.action == GR::EAction::Press)
-	{
-		Window* wnd = static_cast<Window*>(Data);
-		switch (Event.key)
-		{
-		case GR::EKey::Key_1:
-			Sun = 1.0;
-			CloudLayer.Coverage = 0.185;
-			CloudLayer.VerticalSpan = 0.2;
-			break;
-		case GR::EKey::Key_2:
-			Sun = 0.495;
-			CloudLayer.Coverage = 0.2;
-			CloudLayer.VerticalSpan = 0.5;
-			break;
-		case GR::EKey::Key_3:
-			Sun = 0.52;
-			CloudLayer.Coverage = 0.25;
-			CloudLayer.VerticalSpan = 0.0;
-			break;
-		case GR::EKey::Key_4:
-			Sun = 0.45;
-			CloudLayer.Coverage = 0.185;
-			CloudLayer.VerticalSpan = 0.49;
-			break;
-		default:
-			break;
-		}
-	}
 };
 
-inline void UpdateUI(Renderer& renderer)
+void SpawnSphere(Renderer& renderer, PhysicsWorld& world)
+{
+	Camera& camera = renderer.m_Camera;
+
+	Shapes::Sphere sphere{};
+	sphere.m_Radius = 15.f;
+	sphere.m_Rings = 64u;
+	sphere.m_Slices = 64u;
+
+	Entity object = world.AddShape(sphere);
+	world.GetComponent<Components::WorldMatrix>(object).SetOffset(camera.View.GetOffset() + camera.View.GetForward() * 50.0);
+	world.ResetObject(object);
+};
+
+void SpawnBox(Renderer& renderer, PhysicsWorld& world)
+{
+	Camera& camera = renderer.m_Camera;
+
+	Shapes::Cube sphere{};
+	sphere.m_Scale = 30.f;
+
+	Entity object = world.AddShape(sphere);
+	world.GetComponent<Components::WorldMatrix>(object).SetOffset(camera.View.GetOffset() + camera.View.GetForward() * 50.0);
+	world.ResetObject(object);
+};
+
+inline void UpdateUI(Renderer& renderer, PhysicsWorld& world)
 {
 	ImGui::SetCurrentContext(renderer.GetImguiContext());
 
@@ -81,25 +76,33 @@ inline void UpdateUI(Renderer& renderer)
 	MousePressed = MousePressed && !ImGui::IsWindowHovered();
 
 	ImGui::SliderFloat("Sun position", &Sun, 0.0, 1.0);
-	ImGui::SliderFloat("Coverage", &CloudLayer.Coverage, 0.0, 1.0);
-	ImGui::SliderFloat("Vertical span", &CloudLayer.VerticalSpan, 0.0, 1.0);
-	ImGui::SliderFloat("Wind speed", &CloudLayer.WindSpeed, 0.0, 1.0);
-	ImGui::DragFloat("Absorption", &CloudLayer.Absorption, 1e-5, 0.0, 1.0, "%.5f");
+
+	ImGui::Button("Spawn ball");
+	if (ImGui::IsItemClicked())
+	{
+		SpawnSphere(renderer, world);
+	}
+
+	ImGui::Button("Spawn box");
+	if (ImGui::IsItemClicked())
+	{
+		SpawnBox(renderer, world);
+	}
 
 	ImGui::End();
 };
 
-inline void ControlCamera(GR::Camera& camera, double delta)
+inline void ControlCamera(Camera& camera, double delta)
 {
 	glm::dvec3 off = glm::dvec3(0.0);
-	if (KeyStates[EKey::A] != EAction::Release) off.x += speed_mult * delta;
-	if (KeyStates[EKey::D] != EAction::Release) off.x -= speed_mult * delta;
+	if (KeyStates[Enums::EKey::A] != Enums::EAction::Release) off.x += speed_mult * delta;
+	if (KeyStates[Enums::EKey::D] != Enums::EAction::Release) off.x -= speed_mult * delta;
 
-	if (KeyStates[EKey::W] != EAction::Release) off.z += speed_mult * delta;
-	if (KeyStates[EKey::S] != EAction::Release) off.z -= speed_mult * delta;
+	if (KeyStates[Enums::EKey::W] != Enums::EAction::Release) off.z += speed_mult * delta;
+	if (KeyStates[Enums::EKey::S] != Enums::EAction::Release) off.z -= speed_mult * delta;
 
-	if (KeyStates[EKey::PageUp] != EAction::Release) off.y += speed_mult * delta;
-	if (KeyStates[EKey::PageDown] != EAction::Release) off.y -= speed_mult * delta;
+	if (KeyStates[Enums::EKey::PageUp] != Enums::EAction::Release) off.y += speed_mult * delta;
+	if (KeyStates[Enums::EKey::PageDown] != Enums::EAction::Release) off.y -= speed_mult * delta;
 
 	camera.View.Translate(off);
 
@@ -120,12 +123,6 @@ inline void ControlCamera(GR::Camera& camera, double delta)
 inline void ControlWorld(Renderer& renderer, double delta)
 {
 	renderer.m_SunDirection = glm::normalize(glm::vec3(0.0, Sun * 2.0 - 1.0, 1.0));
-
-	if (CloudLayer_Old != CloudLayer)
-	{
-		renderer.SetCloudLayerSettings(CloudLayer);
-		CloudLayer_Old = CloudLayer;
-	}
 };
 
 int main(int argc, const char** argv)
@@ -135,6 +132,7 @@ int main(int argc, const char** argv)
 	Renderer& renderer = window.GetRenderer();
 	Camera& camera = renderer.m_Camera;
 	EventListener listener = {};
+	PhysicsWorld world(renderer);
 
 	// Events setup
 	window.SetUpEvents(listener);
@@ -145,28 +143,31 @@ int main(int argc, const char** argv)
 	listener.Subscribe(KeyPress);
 
 	// World setup
-	renderer.m_Camera.View.SetOffset({ 0.0, 50.0, 0.0 });
+	renderer.m_Camera.View.SetOffset({ 0.0, 10.0, 0.0 });
 
 	// Rendering
 	double delta = 0.0;
-	auto last_time = GetTime();
+	auto last_time = Utils::GetTime();
+	constexpr double fixedStep = 1.0 / 60.0;
+
 	while (window.IsAlive())
 	{
 		// Update delta
-		auto time = GetTime();
+		auto time = Utils::GetTime();
 		delta = time - last_time;
 		window.SetTitle(("Volumetric clouds demo " + std::format("{:.1f}", 1.0 / delta)).c_str());
 		last_time = time;
 
 		// Update simulation
 		window.ProcessEvents();
-		ControlCamera(camera, delta);
+		ControlCamera(camera, fixedStep / delta);
 		ControlWorld(renderer, delta);
 
 		// Render frame
-		renderer.BeginFrame(delta);
-	
-		UpdateUI(renderer);
+		renderer.BeginFrame();
+
+		world.DrawScene(delta);
+		UpdateUI(renderer, world);
 		
 		renderer.EndFrame();
 	}

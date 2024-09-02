@@ -1,6 +1,8 @@
 include_directories(${DemoPrj_SOURCE_DIR}/engine/include)
+include_directories(${DemoPrj_SOURCE_DIR}/include)
 include_directories(${DemoPrj_SOURCE_DIR}/engine/source)
 link_directories(${DemoPrj_SOURCE_DIR}/engine/libraries)
+link_directories(${DemoPrj_SOURCE_DIR}/libraries)
 
 file(GLOB ROOT_SOURCES "${DemoPrj_SOURCE_DIR}/demo/*.cpp" "${DemoPrj_SOURCE_DIR}/demo/*.h")
 
@@ -16,6 +18,12 @@ set_target_properties(demo PROPERTIES  RUNTIME_OUTPUT_DIRECTORY_DEBUG ${DemoPrj_
 set_target_properties(demo PROPERTIES  RUNTIME_OUTPUT_DIRECTORY_RELEASE ${DemoPrj_SOURCE_DIR}/bin)
 target_link_libraries(demo assimp.lib glfw3.lib vulkan-1.lib)
 target_link_libraries(demo source)
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+	target_link_libraries(demo BulletCollision_Debug.lib BulletDynamics_Debug.lib LinearMath_Debug.lib)
+else()
+	target_link_libraries(demo BulletCollision_Release.lib BulletDynamics_Release.lib LinearMath_Release.lib)
+endif()
 
 if (DEFINED COPY_PATH)
     file(GLOB CONTENT_SRC ${DemoPrj_SOURCE_DIR}/content/*)
