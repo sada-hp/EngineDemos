@@ -6,11 +6,11 @@ namespace GR
 	PhysicsWorld::PhysicsWorld(const Renderer& Context)
 		: World(Context)
 	{
-		broadphase = new btDbvtBroadphase;
-		solver = new btSequentialImpulseConstraintSolver;
-		collisionConfiguration = new btDefaultCollisionConfiguration;
-		dispatcher = new btCollisionDispatcher(collisionConfiguration);
-		dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
+		m_Broadphase = new btDbvtBroadphase;
+		m_Solver = new btSequentialImpulseConstraintSolver;
+		m_CollisionConfiguration = new btDefaultCollisionConfiguration;
+		m_Dispatcher = new btCollisionDispatcher(m_CollisionConfiguration);
+		m_DynamicsWorld = new btDiscreteDynamicsWorld(m_Dispatcher, m_Broadphase, m_Solver, m_CollisionConfiguration);
 
 		_addPlanet(Renderer::Rg, btVector3(0.0, -Renderer::Rg, 0.0));
 	}
@@ -20,12 +20,12 @@ namespace GR
 		Clear();
 		_clearPlanet();
 
-		delete dynamicsWorld;
-		delete dispatcher;
+		delete m_DynamicsWorld;
+		delete m_Dispatcher;
 
-		delete collisionConfiguration;
-		delete broadphase;
-		delete solver;
+		delete m_CollisionConfiguration;
+		delete m_Broadphase;
+		delete m_Solver;
 	}
 
 	Entity PhysicsWorld::AddShape(const Shapes::Shape& Descriptor)
@@ -65,9 +65,9 @@ namespace GR
 		body->setSleepingThresholds(0.5, 0.5);
 		body->setRollingFriction(rollFriction);
 
-		collisionShapes.push_back(colShape);
+		m_CollisionShapes.push_back(colShape);
 		Registry.emplace<Components::Body>(ent, body);
-		dynamicsWorld->addRigidBody(body);
+		m_DynamicsWorld->addRigidBody(body);
 
 		return ent;
 	}
@@ -92,31 +92,31 @@ namespace GR
 			body.body->getWorldTransform().getOpenGLMatrix(glm::value_ptr(transform.matrix));
 			body.body->setGravity((body.body->getWorldTransform().getOrigin() + btVector3(0.0, Renderer::Rg, 0.0)).normalized() * gravity);
 		}
-		dynamicsWorld->stepSimulation(Delta, 5, fixedStep);
+		m_DynamicsWorld->stepSimulation(Delta, 5, fixedStep);
 
 		World::DrawScene(Delta);
 	}
 
 	void PhysicsWorld::Clear()
 	{
-		for (int i = 1; i < dynamicsWorld->getNumCollisionObjects(); ++i)
+		for (int i = 1; i < m_DynamicsWorld->getNumCollisionObjects(); ++i)
 		{
-			btCollisionObject* obj = dynamicsWorld->getCollisionObjectArray()[i];
+			btCollisionObject* obj = m_DynamicsWorld->getCollisionObjectArray()[i];
 			btRigidBody* body = btRigidBody::upcast(obj);
 			if (body && body->getMotionState())
 			{
 				delete body->getMotionState();
 			}
 
-			dynamicsWorld->removeCollisionObject(obj);
+			m_DynamicsWorld->removeCollisionObject(obj);
 			delete obj;
 		}
 
-		for (int i = 1; i < collisionShapes.size(); ++i)
+		for (int i = 1; i < m_CollisionShapes.size(); ++i)
 		{
-			delete collisionShapes[i];
+			delete m_CollisionShapes[i];
 		}
-		collisionShapes.resize(1);
+		m_CollisionShapes.resize(1);
 
 		World::Clear();
 	}
@@ -124,7 +124,7 @@ namespace GR
 	void PhysicsWorld::_addPlanet(double r, btVector3 origin)
 	{
 		btCollisionShape* colShape = new btSphereShape(btScalar(r));
-		collisionShapes.push_back(colShape);
+		m_CollisionShapes.push_back(colShape);
 
 		btScalar mass(0.0);
 		btTransform startTransform;
@@ -136,21 +136,21 @@ namespace GR
 		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, colShape, localInertia);
 		btRigidBody* body = new btRigidBody(rbInfo);
 
-		dynamicsWorld->addRigidBody(body);
+		m_DynamicsWorld->addRigidBody(body);
 	}
 
 	void PhysicsWorld::_clearPlanet()
 	{
-		btCollisionObject* obj = dynamicsWorld->getCollisionObjectArray()[0];
+		btCollisionObject* obj = m_DynamicsWorld->getCollisionObjectArray()[0];
 		btRigidBody* body = btRigidBody::upcast(obj);
 		if (body && body->getMotionState())
 		{
 			delete body->getMotionState();
 		}
 
-		dynamicsWorld->removeCollisionObject(obj);
+		m_DynamicsWorld->removeCollisionObject(obj);
 		delete obj;
-		delete collisionShapes[0];
-		collisionShapes.removeAtIndex(0);
+		delete m_CollisionShapes[0];
+		m_CollisionShapes.removeAtIndex(0);
 	}
 };

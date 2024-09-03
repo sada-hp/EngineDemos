@@ -7,7 +7,8 @@
 
 using namespace GR;
 
-glm::vec3 CameraPYR;
+glm::vec3 CameraPYR(0.0);
+glm::vec3 ColorModifier(1.0);
 glm::vec2 Cursor = glm::vec2(0.0);
 std::map<Enums::EKey, Enums::EAction> KeyStates;
 bool MousePressed = false;
@@ -51,6 +52,7 @@ void SpawnSphere(Renderer& renderer, PhysicsWorld& world)
 
 	Entity object = world.AddShape(sphere);
 	world.GetComponent<Components::WorldMatrix>(object).SetOffset(camera.View.GetOffset() + camera.View.GetForward() * 50.0);
+	world.GetComponent<Components::RGBColor>(object).Value = ColorModifier;
 	world.ResetObject(object);
 };
 
@@ -63,6 +65,7 @@ void SpawnBox(Renderer& renderer, PhysicsWorld& world)
 
 	Entity object = world.AddShape(sphere);
 	world.GetComponent<Components::WorldMatrix>(object).SetOffset(camera.View.GetOffset() + camera.View.GetForward() * 50.0);
+	world.GetComponent<Components::RGBColor>(object).Value = ColorModifier;
 	world.ResetObject(object);
 };
 
@@ -73,9 +76,12 @@ inline void UpdateUI(Renderer& renderer, PhysicsWorld& world)
 	ImGui::Begin("Settings", 0, ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysAutoResize);
 	ImGui::SetWindowPos({ 0, 0 });
 
-	MousePressed = MousePressed && !ImGui::IsWindowHovered();
-
 	ImGui::SliderFloat("Sun position", &Sun, 0.0, 1.0);
+
+	ImGui::Separator();
+	ImGui::Text("Spawn menu:");
+
+	ImGui::ColorEdit3("Color", glm::value_ptr(ColorModifier));
 
 	ImGui::Button("Spawn ball");
 	if (ImGui::IsItemClicked())
@@ -90,6 +96,8 @@ inline void UpdateUI(Renderer& renderer, PhysicsWorld& world)
 	}
 
 	ImGui::End();
+
+	MousePressed = MousePressed && !ImGui::IsAnyItemHovered();
 };
 
 inline void ControlCamera(Camera& camera, double delta)

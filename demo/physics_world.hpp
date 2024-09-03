@@ -48,11 +48,11 @@ namespace GR
 		void _clearPlanet();
 
 	private:
-		btAlignedObjectArray<btCollisionShape*> collisionShapes;
-		btDefaultCollisionConfiguration* collisionConfiguration;
-		btSequentialImpulseConstraintSolver* solver;
-		btDiscreteDynamicsWorld* dynamicsWorld;
-		btCollisionDispatcher* dispatcher;
-		btDbvtBroadphase* broadphase;
+		btAlignedObjectArray<btCollisionShape*> m_CollisionShapes;
+		btDefaultCollisionConfiguration* m_CollisionConfiguration;
+		btSequentialImpulseConstraintSolver* m_Solver;
+		btDiscreteDynamicsWorld* m_DynamicsWorld;
+		btCollisionDispatcher* m_Dispatcher;
+		btDbvtBroadphase* m_Broadphase;
 	};
 };
