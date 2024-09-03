@@ -136,7 +136,7 @@ inline void ControlWorld(Renderer& renderer, double delta)
 int main(int argc, const char** argv)
 {
 	// Systems setup
-	Window window(1024, 720, "Volumetric clouds demo");
+	Window window(1024, 720, "Bullet physics demo");
 	Renderer& renderer = window.GetRenderer();
 	Camera& camera = renderer.m_Camera;
 	EventListener listener = {};
@@ -163,7 +163,7 @@ int main(int argc, const char** argv)
 		// Update delta
 		auto time = Utils::GetTime();
 		delta = time - last_time;
-		window.SetTitle(("Volumetric clouds demo " + std::format("{:.1f}", 1.0 / delta)).c_str());
+		window.SetTitle(("Bullet physics demo " + std::format("{:.1f}", 1.0 / delta)).c_str());
 		last_time = time;
 
 		// Update simulation
