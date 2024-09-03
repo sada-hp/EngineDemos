@@ -8,21 +8,21 @@ using namespace GR;
 
 glm::vec3 CameraPYR;
 glm::vec2 Cursor = glm::vec2(0.0);
-std::map<EKey, EAction> KeyStates;
+std::map<Enums::EKey, Enums::EAction> KeyStates;
 CloudLayerProfile CloudLayer{};
 CloudLayerProfile CloudLayer_Old{};
 bool MousePressed = false;
 double speed_mult = 100.0;
 float Sun = 1.0;
 
-void MousePress(GREvent::MousePress Event, void* Data)
+void MousePress(Events::MousePress Event, void* Data)
 {
 	Window* wnd = static_cast<Window*>(Data);
 	Cursor = wnd->GetCursorPos();
-	MousePressed = (Event.action != EAction::Release);
+	MousePressed = (Event.action != Enums::EAction::Release);
 };
 
-void MouseMove(GREvent::MousePosition Event, void* Data)
+void MouseMove(Events::MousePosition Event, void* Data)
 {
 	if (MousePressed)
 	{
@@ -31,36 +31,36 @@ void MouseMove(GREvent::MousePosition Event, void* Data)
 	}
 };
 
-void MouseScroll(GREvent::ScrollDelta Event, void* Data)
+void MouseScroll(Events::ScrollDelta Event, void* Data)
 {
 	speed_mult = glm::clamp(speed_mult + 100.0 * Event.y, 1.0, 10000.0);
 };
 
-void KeyPress(GREvent::KeyPress Event, void* Data)
+void KeyPress(Events::KeyPress Event, void* Data)
 {
 	KeyStates[Event.key] = Event.action;
 
-	if (Event.action == GR::EAction::Press)
+	if (Event.action == Enums::EAction::Press)
 	{
 		Window* wnd = static_cast<Window*>(Data);
 		switch (Event.key)
 		{
-		case GR::EKey::Key_1:
+		case Enums::EKey::Key_1:
 			Sun = 1.0;
 			CloudLayer.Coverage = 0.185;
 			CloudLayer.VerticalSpan = 0.2;
 			break;
-		case GR::EKey::Key_2:
+		case Enums::EKey::Key_2:
 			Sun = 0.495;
 			CloudLayer.Coverage = 0.2;
 			CloudLayer.VerticalSpan = 0.5;
 			break;
-		case GR::EKey::Key_3:
+		case Enums::EKey::Key_3:
 			Sun = 0.52;
 			CloudLayer.Coverage = 0.25;
 			CloudLayer.VerticalSpan = 0.0;
 			break;
-		case GR::EKey::Key_4:
+		case Enums::EKey::Key_4:
 			Sun = 0.45;
 			CloudLayer.Coverage = 0.185;
 			CloudLayer.VerticalSpan = 0.49;
@@ -92,14 +92,14 @@ inline void UpdateUI(Renderer& renderer)
 inline void ControlCamera(GR::Camera& camera, double delta)
 {
 	glm::dvec3 off = glm::dvec3(0.0);
-	if (KeyStates[EKey::A] != EAction::Release) off.x += speed_mult * delta;
-	if (KeyStates[EKey::D] != EAction::Release) off.x -= speed_mult * delta;
+	if (KeyStates[Enums::EKey::A] != Enums::EAction::Release) off.x += speed_mult * delta;
+	if (KeyStates[Enums::EKey::D] != Enums::EAction::Release) off.x -= speed_mult * delta;
 
-	if (KeyStates[EKey::W] != EAction::Release) off.z += speed_mult * delta;
-	if (KeyStates[EKey::S] != EAction::Release) off.z -= speed_mult * delta;
+	if (KeyStates[Enums::EKey::W] != Enums::EAction::Release) off.z += speed_mult * delta;
+	if (KeyStates[Enums::EKey::S] != Enums::EAction::Release) off.z -= speed_mult * delta;
 
-	if (KeyStates[EKey::PageUp] != EAction::Release) off.y += speed_mult * delta;
-	if (KeyStates[EKey::PageDown] != EAction::Release) off.y -= speed_mult * delta;
+	if (KeyStates[Enums::EKey::PageUp] != Enums::EAction::Release) off.y += speed_mult * delta;
+	if (KeyStates[Enums::EKey::PageDown] != Enums::EAction::Release) off.y -= speed_mult * delta;
 
 	camera.View.Translate(off);
 
@@ -149,11 +149,11 @@ int main(int argc, const char** argv)
 
 	// Rendering
 	double delta = 0.0;
-	auto last_time = GetTime();
+	auto last_time = Utils::GetTime();
 	while (window.IsAlive())
 	{
 		// Update delta
-		auto time = GetTime();
+		auto time = Utils::GetTime();
 		delta = time - last_time;
 		window.SetTitle(("Volumetric clouds demo " + std::format("{:.1f}", 1.0 / delta)).c_str());
 		last_time = time;
@@ -164,7 +164,7 @@ int main(int argc, const char** argv)
 		ControlWorld(renderer, delta);
 
 		// Render frame
-		renderer.BeginFrame(delta);
+		renderer.BeginFrame();
 	
 		UpdateUI(renderer);
 		
