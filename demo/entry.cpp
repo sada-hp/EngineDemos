@@ -13,6 +13,7 @@ glm::vec2 Cursor = glm::vec2(0.0);
 std::map<Enums::EKey, Enums::EAction> KeyStates;
 bool MousePressed = false;
 double speed_mult = 1.0;
+float Scale = 1.0;
 float Sun = 1.0;
 
 void MousePress(Events::MousePress Event, void* Data)
@@ -46,12 +47,12 @@ void SpawnSphere(Renderer& renderer, PhysicsWorld& world)
 	Camera& camera = renderer.m_Camera;
 
 	Shapes::Sphere sphere{};
-	sphere.m_Radius = 15.f;
+	sphere.m_Radius = Scale * 15.f;
 	sphere.m_Rings = 64u;
 	sphere.m_Slices = 64u;
 
 	Entity object = world.AddShape(sphere);
-	world.GetComponent<Components::WorldMatrix>(object).SetOffset(camera.View.GetOffset() + camera.View.GetForward() * 50.0);
+	world.GetComponent<Components::WorldMatrix>(object).SetOffset(camera.View.GetOffset() + camera.View.GetForward() * (50.0 * Scale));
 	world.GetComponent<Components::RGBColor>(object).Value = ColorModifier;
 	world.ResetObject(object);
 };
@@ -61,10 +62,10 @@ void SpawnBox(Renderer& renderer, PhysicsWorld& world)
 	Camera& camera = renderer.m_Camera;
 
 	Shapes::Cube sphere{};
-	sphere.m_Scale = 30.f;
+	sphere.m_Scale = Scale * 30.f;
 
 	Entity object = world.AddShape(sphere);
-	world.GetComponent<Components::WorldMatrix>(object).SetOffset(camera.View.GetOffset() + camera.View.GetForward() * 50.0);
+	world.GetComponent<Components::WorldMatrix>(object).SetOffset(camera.View.GetOffset() + camera.View.GetForward() * (50.0 * Scale));
 	world.GetComponent<Components::RGBColor>(object).Value = ColorModifier;
 	world.ResetObject(object);
 };
@@ -82,6 +83,8 @@ inline void UpdateUI(Renderer& renderer, PhysicsWorld& world)
 	ImGui::Text("Spawn menu:");
 
 	ImGui::ColorEdit3("Color", glm::value_ptr(ColorModifier));
+
+	ImGui::SliderFloat("Object scale", &Scale, 0.1, 2.0);
 
 	ImGui::Button("Spawn ball");
 	if (ImGui::IsItemClicked())

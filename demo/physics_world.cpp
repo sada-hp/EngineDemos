@@ -38,23 +38,27 @@ namespace GR
 		glm::vec3 extents = Descriptor.GetDimensions();
 		if (dynamic_cast<const Shapes::Sphere*>(&Descriptor))
 		{
+			rollFriction = 0.25;
 			colShape = new btSphereShape(btScalar(extents.x));
-			rollFriction = 0.5;
-			mass = Descriptor.GetDimensions().x * Descriptor.GetDimensions().y * 0.75;
+			mass = Descriptor.GetDimensions().x * Descriptor.GetDimensions().y * 0.5;
 		}
 		else if (dynamic_cast<const Shapes::Cube*>(&Descriptor))
 		{
+			rollFriction = 1.0;
 			colShape = new btBoxShape(btVector3(extents.x, extents.y, extents.z));
 			mass = Descriptor.GetDimensions().x* Descriptor.GetDimensions().y;
 		}
 		else
 		{
+			rollFriction = 1.0;
 			colShape = new btBoxShape(btVector3(5.0, 5.0, 5.0));
 			mass = Descriptor.GetDimensions().x * Descriptor.GetDimensions().y;
 		}
 
+		btScalar damping = glm::min(rollFriction * mass * 0.01, 0.25);
 		btTransform startTransform;
 		startTransform.setIdentity();
+
 		btVector3 localInertia(0.0, 0.0, 0.0);
 		colShape->calculateLocalInertia(mass, localInertia);
 
@@ -63,6 +67,7 @@ namespace GR
 		btRigidBody* body = new btRigidBody(rbInfo);
 
 		body->setSleepingThresholds(0.5, 0.5);
+		body->setDamping(damping, damping);
 		body->setRollingFriction(rollFriction);
 
 		m_CollisionShapes.push_back(colShape);
@@ -85,12 +90,19 @@ namespace GR
 	void PhysicsWorld::DrawScene(double Delta)
 	{
 		constexpr double fixedStep = 1.0 / 60.0;
+		constexpr double rSq = Renderer::Rg * Renderer::Rg;
+		constexpr double rSqInv = 1.0 / rSq;
+		constexpr double Me = rSq * 0.1;
 
 		auto view = Registry.view<Components::Body, Components::WorldMatrix>();
 		for (const auto& [ent, body, transform] : view.each())
 		{
-			body.body->getWorldTransform().getOpenGLMatrix(glm::value_ptr(transform.matrix));
-			body.body->setGravity((body.body->getWorldTransform().getOrigin() + btVector3(0.0, Renderer::Rg, 0.0)).normalized() * gravity);
+			if (body.body->getActivationState() == ACTIVE_TAG)
+			{
+				const double Fg = glm::sqrt(body.body->getMass()) * gravity; // made up
+				body.body->getWorldTransform().getOpenGLMatrix(glm::value_ptr(transform.matrix));
+				body.body->setGravity((body.body->getWorldTransform().getOrigin() + btVector3(0.0, Renderer::Rg, 0.0)).normalized() * Fg);
+			}
 		}
 		m_DynamicsWorld->stepSimulation(Delta, 5, fixedStep);
 
