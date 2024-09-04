@@ -24,6 +24,13 @@ namespace GR
 		};
 	};
 
+	struct RayCastResult
+	{
+		glm::vec3 hitPos = glm::vec3(0.0);
+		glm::vec3 hitNormal = glm::vec3(0.0);
+		Entity id = Entity(-1);
+	};
+
 	class PhysicsWorld : public World
 	{
 	public:
@@ -36,7 +43,11 @@ namespace GR
 
 		Entity AddShape(const Shapes::Shape& Descriptor) override;
 
+		RayCastResult FirstAtRay(glm::vec3 Origin, glm::vec3 Direction, double Distance = 1e5) const;
+
 		void ResetObject(Entity object);
+
+		void FreezeObject(Entity object);
 
 		void DrawScene(double Delta) override;
 

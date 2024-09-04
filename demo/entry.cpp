@@ -7,34 +7,99 @@
 
 using namespace GR;
 
+struct EventData
+{
+	Window* window;
+	PhysicsWorld* world;
+	Camera* camera;
+};
+
 glm::vec3 CameraPYR(0.0);
 glm::vec3 ColorModifier(1.0);
 glm::vec2 Cursor = glm::vec2(0.0);
 std::map<Enums::EKey, Enums::EAction> KeyStates;
 bool MousePressed = false;
 double speed_mult = 1.0;
-float Scale = 1.0;
+float ObjectScale = 1.0;
 float Sun = 1.0;
+
+Entity Selection = Entity(-1);
+
+inline glm::vec3 GetCursorDirection(Window& window, Camera& camera)
+{
+	glm::vec2 ScreeUV = Cursor / glm::vec2(window.GetWindowSize());
+	glm::dvec4 pixelPosition = glm::vec4(2.0f * ScreeUV - 1.0f, 1.0f, 1.0f);
+	pixelPosition = glm::inverse(camera.get_projection_matrix()) * pixelPosition;
+	pixelPosition = glm::inverse(camera.get_view_matrix()) * glm::dvec4(glm::dvec2(pixelPosition), -1.0, 0.0);
+
+	return glm::normalize(glm::dvec3(pixelPosition));
+}
 
 void MousePress(Events::MousePress Event, void* Data)
 {
-	Window* wnd = static_cast<Window*>(Data);
-	Cursor = wnd->GetCursorPos();
-	MousePressed = (Event.action != Enums::EAction::Release);
+	EventData* data = static_cast<EventData*>(Data);
+	PhysicsWorld& world = *data->world;
+	Window& window = *data->window;
+	Camera& camera = *data->camera;
+
+	Cursor = window.GetCursorPos();
+	MousePressed = Event.key == Enums::EMouse::Left && (Event.action != Enums::EAction::Release);
+
+	if (Event.key == Enums::EMouse::Right && Event.action == Enums::EAction::Press)
+	{
+		glm::vec3 dir = GetCursorDirection(window, camera);
+		RayCastResult rayCast = world.FirstAtRay(camera.View.GetOffset(), dir);
+		Selection = rayCast.id;
+
+		//printf("%d \n", int(rayCast.id));
+	}
+	else if (Selection != Entity(-1) && Event.key == Enums::EMouse::Right && Event.action == Enums::EAction::Release)
+	{
+		world.ResetObject(Selection);
+		Selection = Entity(-1);
+	}
 };
 
 void MouseMove(Events::MousePosition Event, void* Data)
 {
+	EventData* data = static_cast<EventData*>(Data);
+	PhysicsWorld& world = *data->world;
+	Window& window = *data->window;
+	Camera& camera = *data->camera;
+
 	if (MousePressed)
 	{
 		CameraPYR += glm::radians(glm::vec3 (Cursor.y - Event.y, Cursor.x - Event.x, 0.0));
-		Cursor = { Event.x, Event.y };
 	}
+
+	if (Selection != Entity(-1))
+	{
+		glm::vec3 dir = GetCursorDirection(window, camera);
+		Components::WorldMatrix& T = world.GetComponent<Components::WorldMatrix>(Selection);
+		T.SetOffset(glm::vec3(camera.View.GetOffset()) + glm::length(T.GetOffset() - glm::vec3(camera.View.GetOffset())) * dir);
+	}
+
+	Cursor = { Event.x, Event.y };
 };
 
 void MouseScroll(Events::ScrollDelta Event, void* Data)
 {
-	speed_mult = glm::clamp(speed_mult + 10.0 * Event.y, 1.0, 10000.0);
+	EventData* data = static_cast<EventData*>(Data);
+	PhysicsWorld& world = *data->world;
+	Window& window = *data->window;
+	Camera& camera = *data->camera;
+
+	if (Selection != Entity(-1))
+	{
+		glm::vec3 dir = GetCursorDirection(window, camera);
+		Components::WorldMatrix& T = world.GetComponent<Components::WorldMatrix>(Selection);
+		float l = float(1.0 + 0.1 * Event.y) * glm::length(T.GetOffset() - glm::vec3(camera.View.GetOffset()));
+		T.SetOffset(glm::vec3(camera.View.GetOffset()) + l * dir);
+	}
+	else
+	{
+		speed_mult = glm::clamp(speed_mult + 10.0 * Event.y, 1.0, 10000.0);
+	}
 };
 
 void KeyPress(Events::KeyPress Event, void* Data)
@@ -47,12 +112,12 @@ void SpawnSphere(Renderer& renderer, PhysicsWorld& world)
 	Camera& camera = renderer.m_Camera;
 
 	Shapes::Sphere sphere{};
-	sphere.m_Radius = Scale * 15.f;
+	sphere.m_Radius = ObjectScale * 15.f;
 	sphere.m_Rings = 64u;
 	sphere.m_Slices = 64u;
 
 	Entity object = world.AddShape(sphere);
-	world.GetComponent<Components::WorldMatrix>(object).SetOffset(camera.View.GetOffset() + camera.View.GetForward() * (50.0 * Scale));
+	world.GetComponent<Components::WorldMatrix>(object).SetOffset(camera.View.GetOffset() + camera.View.GetForward() * (50.0 * ObjectScale));
 	world.GetComponent<Components::RGBColor>(object).Value = ColorModifier;
 	world.ResetObject(object);
 };
@@ -62,10 +127,10 @@ void SpawnBox(Renderer& renderer, PhysicsWorld& world)
 	Camera& camera = renderer.m_Camera;
 
 	Shapes::Cube sphere{};
-	sphere.m_Scale = Scale * 30.f;
+	sphere.m_Scale = ObjectScale * 30.f;
 
 	Entity object = world.AddShape(sphere);
-	world.GetComponent<Components::WorldMatrix>(object).SetOffset(camera.View.GetOffset() + camera.View.GetForward() * (50.0 * Scale));
+	world.GetComponent<Components::WorldMatrix>(object).SetOffset(camera.View.GetOffset() + camera.View.GetForward() * (50.0 * ObjectScale));
 	world.GetComponent<Components::RGBColor>(object).Value = ColorModifier;
 	world.ResetObject(object);
 };
@@ -84,7 +149,7 @@ inline void UpdateUI(Renderer& renderer, PhysicsWorld& world)
 
 	ImGui::ColorEdit3("Color", glm::value_ptr(ColorModifier));
 
-	ImGui::SliderFloat("Object scale", &Scale, 0.1, 2.0);
+	ImGui::SliderFloat("Object scale", &ObjectScale, 0.1, 2.0);
 
 	ImGui::Button("Spawn ball");
 	if (ImGui::IsItemClicked())
@@ -97,6 +162,10 @@ inline void UpdateUI(Renderer& renderer, PhysicsWorld& world)
 	{
 		SpawnBox(renderer, world);
 	}
+
+	ImGui::Separator();
+	ImGui::Text("RMB - Select and move object");
+	ImGui::Text("Scroll - Move selected object closer/further");
 
 	ImGui::End();
 
@@ -131,9 +200,14 @@ inline void ControlCamera(Camera& camera, double delta)
 	camera.View.matrix[2] = glm::dvec4(glm::normalize(M[2]), 0.0);
 };
 
-inline void ControlWorld(Renderer& renderer, double delta)
+inline void ControlWorld(Renderer& renderer, PhysicsWorld& world, double delta)
 {
 	renderer.m_SunDirection = glm::normalize(glm::vec3(0.0, Sun * 2.0 - 1.0, 1.0));
+
+	if (Selection != Entity(-1))
+	{
+		world.ResetObject(Selection);
+	}
 };
 
 int main(int argc, const char** argv)
@@ -145,9 +219,11 @@ int main(int argc, const char** argv)
 	EventListener listener = {};
 	PhysicsWorld world(renderer);
 
+	EventData Data{ &window, &world, &camera };
+
 	// Events setup
 	window.SetUpEvents(listener);
-	listener.SetUserPointer(&window);
+	listener.SetUserPointer(&Data);
 	listener.Subscribe(MouseScroll);
 	listener.Subscribe(MousePress);
 	listener.Subscribe(MouseMove);
@@ -161,6 +237,7 @@ int main(int argc, const char** argv)
 	auto last_time = Utils::GetTime();
 	constexpr double fixedStep = 1.0 / 60.0;
 
+	// Simulation loop
 	while (window.IsAlive())
 	{
 		// Update delta
@@ -172,7 +249,7 @@ int main(int argc, const char** argv)
 		// Update simulation
 		window.ProcessEvents();
 		ControlCamera(camera, fixedStep / delta);
-		ControlWorld(renderer, delta);
+		ControlWorld(renderer, world, delta);
 
 		// Render frame
 		renderer.BeginFrame();

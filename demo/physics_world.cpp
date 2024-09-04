@@ -52,7 +52,7 @@ namespace GR
 		{
 			rollFriction = 1.0;
 			colShape = new btBoxShape(btVector3(5.0, 5.0, 5.0));
-			mass = Descriptor.GetDimensions().x * Descriptor.GetDimensions().y;
+			mass = 25.0;
 		}
 
 		btScalar damping = glm::min(rollFriction * mass * 0.01, 0.25);
@@ -66,15 +66,36 @@ namespace GR
 		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, colShape, localInertia);
 		btRigidBody* body = new btRigidBody(rbInfo);
 
-		body->setSleepingThresholds(0.5, 0.5);
-		body->setDamping(damping, damping);
+		body->setSleepingThresholds(0.05, 0.05);
 		body->setRollingFriction(rollFriction);
+		body->setDamping(damping, damping);
+		body->setUserIndex(int(ent));
 
 		m_CollisionShapes.push_back(colShape);
 		Registry.emplace<Components::Body>(ent, body);
+		Registry.emplace<Components::Mass>(ent, mass);
 		m_DynamicsWorld->addRigidBody(body);
 
 		return ent;
+	}
+
+	RayCastResult PhysicsWorld::FirstAtRay(glm::vec3 Origin, glm::vec3 Direction, double Distance) const
+	{
+		RayCastResult res{};
+		btVector3 toWorld = btVector3(Origin.x, Origin.y, Origin.z);
+		btVector3 fromWorld = toWorld + btVector3(Direction.x * Distance, Direction.y * Distance, Direction.z * Distance);
+		btCollisionWorld::ClosestRayResultCallback callback(toWorld, fromWorld);
+
+		m_DynamicsWorld->rayTest(toWorld, fromWorld, callback);
+
+		if (callback.hasHit())
+		{
+			res.hitPos = glm::vec3(callback.m_hitPointWorld.x(), callback.m_hitPointWorld.y(), callback.m_hitPointWorld.z());
+			res.hitNormal = glm::vec3(callback.m_hitNormalWorld.x(), callback.m_hitNormalWorld.y(), callback.m_hitNormalWorld.z());
+			res.id = Entity(callback.m_collisionObject->getUserIndex());
+		}
+
+		return res;
 	}
 
 	void PhysicsWorld::ResetObject(Entity object)
@@ -85,6 +106,17 @@ namespace GR
 		btTransform physTransform;
 		physTransform.setFromOpenGLMatrix(glm::value_ptr(transform.matrix));
 		body->setWorldTransform(physTransform);
+		body->clearForces();
+		body->clearGravity();
+		body->activate(true);
+	}
+
+	void PhysicsWorld::FreezeObject(Entity object)
+	{
+		btRigidBody* body = GetComponent<Components::Body>(object).body;
+		body->clearForces();
+		body->clearGravity();
+		body->forceActivationState(0);
 	}
 
 	void PhysicsWorld::DrawScene(double Delta)
@@ -104,7 +136,7 @@ namespace GR
 				body.body->setGravity((body.body->getWorldTransform().getOrigin() + btVector3(0.0, Renderer::Rg, 0.0)).normalized() * Fg);
 			}
 		}
-		m_DynamicsWorld->stepSimulation(Delta, 5, fixedStep);
+		m_DynamicsWorld->stepSimulation(Delta, 10, fixedStep);
 
 		World::DrawScene(Delta);
 	}
