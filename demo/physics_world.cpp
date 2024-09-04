@@ -98,6 +98,24 @@ namespace GR
 		return res;
 	}
 
+	void PhysicsWorld::ObjectContactPoints(Entity object, std::vector<RayCastResult>& out)
+	{
+		btRigidBody* body = GetComponent<Components::Body>(object).body;
+		CollisionTest ctAll(out);
+
+		m_DynamicsWorld->getCollisionWorld()->contactTest(body, ctAll);
+	}
+
+	double PhysicsWorld::DeepestContactPoint(Entity object, RayCastResult& out)
+	{
+		btRigidBody* body = GetComponent<Components::Body>(object).body;
+		CollisionTestDeepest ctDeep(out);
+
+		m_DynamicsWorld->getCollisionWorld()->contactTest(body, ctDeep);
+
+		return ctDeep.d;
+	}
+
 	void PhysicsWorld::ResetObject(Entity object)
 	{
 		Components::WorldMatrix& transform = GetComponent<Components::WorldMatrix>(object);

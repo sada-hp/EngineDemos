@@ -76,7 +76,24 @@ void MouseMove(Events::MousePosition Event, void* Data)
 	{
 		glm::vec3 dir = GetCursorDirection(window, camera);
 		Components::WorldMatrix& T = world.GetComponent<Components::WorldMatrix>(Selection);
-		T.SetOffset(glm::vec3(camera.View.GetOffset()) + glm::length(T.GetOffset() - glm::vec3(camera.View.GetOffset())) * dir);
+
+		glm::vec3 offset = glm::vec3(camera.View.GetOffset()) + glm::length(T.GetOffset() - glm::vec3(camera.View.GetOffset())) * dir;
+		T.SetOffset(offset);
+		world.ResetObject(Selection);
+
+		int iter = 0;
+		RayCastResult hit;
+		float deepestContact = world.DeepestContactPoint(Selection, hit);
+		while (deepestContact > 0.0 && iter < 10)
+		{
+			offset += hit.hitNormal * float(deepestContact + 0.01);
+
+			T.SetOffset(offset);
+			world.ResetObject(Selection);
+
+			deepestContact = world.DeepestContactPoint(Selection, hit);
+			iter++;
+		}
 	}
 
 	Cursor = { Event.x, Event.y };
@@ -93,8 +110,24 @@ void MouseScroll(Events::ScrollDelta Event, void* Data)
 	{
 		glm::vec3 dir = GetCursorDirection(window, camera);
 		Components::WorldMatrix& T = world.GetComponent<Components::WorldMatrix>(Selection);
-		float l = float(1.0 + 0.1 * Event.y) * glm::length(T.GetOffset() - glm::vec3(camera.View.GetOffset()));
-		T.SetOffset(glm::vec3(camera.View.GetOffset()) + l * dir);
+
+		glm::vec3 offset = glm::vec3(camera.View.GetOffset()) + float(1.0 + Event.y * 0.1) * glm::length(T.GetOffset() - glm::vec3(camera.View.GetOffset())) * dir;
+		T.SetOffset(offset);
+		world.ResetObject(Selection);
+
+		int iter = 0;
+		RayCastResult hit;
+		float deepestContact = world.DeepestContactPoint(Selection, hit);
+		while (deepestContact > 0.0 && iter < 10)
+		{
+			offset += hit.hitNormal * float(deepestContact + 0.01);
+
+			T.SetOffset(offset);
+			world.ResetObject(Selection);
+
+			deepestContact = world.DeepestContactPoint(Selection, hit);
+			iter++;
+		}
 	}
 	else
 	{
@@ -230,7 +263,7 @@ int main(int argc, const char** argv)
 	listener.Subscribe(KeyPress);
 
 	// World setup
-	renderer.m_Camera.View.SetOffset({ 0.0, 10.0, 0.0 });
+	renderer.m_Camera.View.SetOffset({ 0.0, 25.0, 0.0 });
 
 	// Rendering
 	double delta = 0.0;
