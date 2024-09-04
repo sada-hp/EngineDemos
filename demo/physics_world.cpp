@@ -127,6 +127,22 @@ namespace GR
 		body->clearForces();
 		body->clearGravity();
 		body->activate(true);
+		body->setLinearVelocity(btVector3(0.0, 0.0, 0.0));
+		body->setAngularVelocity(btVector3(0.0, 0.0, 0.0));
+
+		btVector3 localInertia(0.0, 0.0, 0.0);
+		body->getCollisionShape()->calculateLocalInertia(body->getMass(), localInertia);
+		body->setMassProps(body->getMass(), localInertia);
+	}
+
+	void PhysicsWorld::ResetPosition(Entity object)
+	{
+		Components::WorldMatrix& transform = GetComponent<Components::WorldMatrix>(object);
+		btRigidBody* body = GetComponent<Components::Body>(object).body;
+
+		btTransform physTransform;
+		physTransform.setFromOpenGLMatrix(glm::value_ptr(transform.matrix));
+		body->setWorldTransform(physTransform);
 	}
 
 	void PhysicsWorld::FreezeObject(Entity object)

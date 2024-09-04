@@ -33,7 +33,7 @@ inline glm::vec3 GetCursorDirection(Window& window, Camera& camera)
 	pixelPosition = glm::inverse(camera.get_view_matrix()) * glm::dvec4(glm::dvec2(pixelPosition), -1.0, 0.0);
 
 	return glm::normalize(glm::dvec3(pixelPosition));
-}
+};
 
 void MousePress(Events::MousePress Event, void* Data)
 {
@@ -123,7 +123,7 @@ void MouseScroll(Events::ScrollDelta Event, void* Data)
 			offset += hit.hitNormal * float(deepestContact + 0.01);
 
 			T.SetOffset(offset);
-			world.ResetObject(Selection);
+			world.ResetPosition(Selection);
 
 			deepestContact = world.DeepestContactPoint(Selection, hit);
 			iter++;
@@ -152,7 +152,7 @@ void SpawnSphere(Renderer& renderer, PhysicsWorld& world)
 	Entity object = world.AddShape(sphere);
 	world.GetComponent<Components::WorldMatrix>(object).SetOffset(camera.View.GetOffset() + camera.View.GetForward() * (50.0 * ObjectScale));
 	world.GetComponent<Components::RGBColor>(object).Value = ColorModifier;
-	world.ResetObject(object);
+	world.ResetPosition(object);
 };
 
 void SpawnBox(Renderer& renderer, PhysicsWorld& world)
@@ -165,7 +165,7 @@ void SpawnBox(Renderer& renderer, PhysicsWorld& world)
 	Entity object = world.AddShape(sphere);
 	world.GetComponent<Components::WorldMatrix>(object).SetOffset(camera.View.GetOffset() + camera.View.GetForward() * (50.0 * ObjectScale));
 	world.GetComponent<Components::RGBColor>(object).Value = ColorModifier;
-	world.ResetObject(object);
+	world.ResetPosition(object);
 };
 
 inline void UpdateUI(Renderer& renderer, PhysicsWorld& world)
@@ -239,7 +239,7 @@ inline void ControlWorld(Renderer& renderer, PhysicsWorld& world, double delta)
 
 	if (Selection != Entity(-1))
 	{
-		world.ResetObject(Selection);
+		world.ResetPosition(Selection);
 	}
 };
 

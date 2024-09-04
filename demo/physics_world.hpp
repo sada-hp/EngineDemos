@@ -100,6 +100,8 @@ namespace GR
 
 		void ResetObject(Entity object);
 
+		void ResetPosition(Entity object);
+
 		void FreezeObject(Entity object);
 
 		void DrawScene(double Delta) override;
