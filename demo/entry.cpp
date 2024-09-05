@@ -63,7 +63,7 @@ void KeyPress(Events::KeyPress Event, void* Data)
 		case Enums::EKey::Key_4:
 			Sun = 0.45;
 			CloudLayer.Coverage = 0.185;
-			CloudLayer.VerticalSpan = 0.49;
+			CloudLayer.VerticalSpan = 0.35;
 			break;
 		default:
 			break;
@@ -145,7 +145,7 @@ int main(int argc, const char** argv)
 	listener.Subscribe(KeyPress);
 
 	// World setup
-	renderer.m_Camera.View.SetOffset({ 0.0, 50.0, 0.0 });
+	renderer.m_Camera.View.SetOffset({ 0.0, Renderer::Rg + 50.0, 0.0 });
 
 	// Rendering
 	double delta = 0.0;
@@ -164,10 +164,11 @@ int main(int argc, const char** argv)
 		ControlWorld(renderer, delta);
 
 		// Render frame
-		renderer.BeginFrame();
-	
-		UpdateUI(renderer);
-		
-		renderer.EndFrame();
+		if (renderer.BeginFrame())
+		{
+			UpdateUI(renderer);
+
+			renderer.EndFrame();
+		}
 	}
 };
