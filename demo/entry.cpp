@@ -265,6 +265,14 @@ int main(int argc, const char** argv)
 	// World setup
 	renderer.m_Camera.View.SetOffset({ 0.0, 25.0, 0.0 });
 
+	Shapes::GeoClipmap Terrain{};
+	Terrain.m_Scale = 20.f;
+	Terrain.m_Rings = 10u;
+	Entity terrain = world.AddShape(Terrain);
+	world.GetComponent<Components::RGBColor>(terrain).Value = glm::vec3(0.0, 0.35, 0.0);
+
+	camera.Projection.SetDepthRange(0.01, 1e5);
+
 	// Rendering
 	double delta = 0.0;
 	auto last_time = Utils::GetTime();

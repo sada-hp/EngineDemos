@@ -90,7 +90,11 @@ namespace GR
 
 		virtual ~PhysicsWorld();
 
-		Entity AddShape(const Shapes::Shape& Descriptor) override;
+		Entity AddShape(const Shapes::GeoClipmap& Descriptor) override;
+
+		Entity AddShape(const Shapes::Cube& Descriptor);
+
+		Entity AddShape(const Shapes::Sphere& Descriptor);
 
 		RayCastResult FirstAtRay(glm::vec3 Origin, glm::vec3 Direction, double Distance = 1e5) const;
 
@@ -107,11 +111,6 @@ namespace GR
 		void DrawScene(double Delta) override;
 
 		void Clear() override;
-
-	private:
-		void _addPlanet(double r, btVector3 origin);
-
-		void _clearPlanet();
 
 	private:
 		btAlignedObjectArray<btCollisionShape*> m_CollisionShapes;

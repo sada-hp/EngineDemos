@@ -11,14 +11,11 @@ namespace GR
 		m_CollisionConfiguration = new btDefaultCollisionConfiguration;
 		m_Dispatcher = new btCollisionDispatcher(m_CollisionConfiguration);
 		m_DynamicsWorld = new btDiscreteDynamicsWorld(m_Dispatcher, m_Broadphase, m_Solver, m_CollisionConfiguration);
-
-		_addPlanet(Renderer::Rg, btVector3(0.0, -Renderer::Rg, 0.0));
 	}
 
 	PhysicsWorld::~PhysicsWorld()
 	{
 		Clear();
-		_clearPlanet();
 
 		delete m_DynamicsWorld;
 		delete m_Dispatcher;
@@ -28,32 +25,69 @@ namespace GR
 		delete m_Solver;
 	}
 
-	Entity PhysicsWorld::AddShape(const Shapes::Shape& Descriptor)
+	Entity PhysicsWorld::AddShape(const Shapes::GeoClipmap& Descriptor)
+	{
+		double r = Renderer::Rg;
+		btVector3 origin = btVector3(0.0, -r, 0.0);
+		btCollisionShape* colShape = new btSphereShape(btScalar(r));
+		m_CollisionShapes.push_back(colShape);
+
+		btScalar mass(0.0);
+		btTransform startTransform;
+		btVector3 localInertia(0.0, 0.0, 0.0);
+		startTransform.setIdentity();
+		startTransform.setOrigin(origin);
+
+		btDefaultMotionState* myMotionState = new btDefaultMotionState(startTransform);
+		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, colShape, localInertia);
+		btRigidBody* body = new btRigidBody(rbInfo);
+
+		m_DynamicsWorld->addRigidBody(body);
+
+		return World::AddShape(Descriptor);
+	}
+
+	Entity PhysicsWorld::AddShape(const Shapes::Cube& Descriptor)
 	{
 		Entity ent = World::AddShape(Descriptor);
 
-		btScalar mass = 0.0;
-		btScalar rollFriction = 0.0;
-		btCollisionShape* colShape = nullptr;
+		btScalar rollFriction = 1.0;
 		glm::vec3 extents = Descriptor.GetDimensions();
-		if (dynamic_cast<const Shapes::Sphere*>(&Descriptor))
-		{
-			rollFriction = 0.25;
-			colShape = new btSphereShape(btScalar(extents.x));
-			mass = Descriptor.GetDimensions().x * Descriptor.GetDimensions().y * 0.5;
-		}
-		else if (dynamic_cast<const Shapes::Cube*>(&Descriptor))
-		{
-			rollFriction = 1.0;
-			colShape = new btBoxShape(btVector3(extents.x, extents.y, extents.z));
-			mass = Descriptor.GetDimensions().x* Descriptor.GetDimensions().y;
-		}
-		else
-		{
-			rollFriction = 1.0;
-			colShape = new btBoxShape(btVector3(5.0, 5.0, 5.0));
-			mass = 25.0;
-		}
+		btScalar mass = extents.x * extents.y;
+		btCollisionShape* colShape = new btBoxShape(btVector3(extents.x, extents.y, extents.z));
+
+		btScalar damping = glm::min(rollFriction * mass * 0.01, 0.25);
+		btTransform startTransform;
+		startTransform.setIdentity();
+
+		btVector3 localInertia(0.0, 0.0, 0.0);
+		colShape->calculateLocalInertia(mass, localInertia);
+
+		btDefaultMotionState* myMotionState = new btDefaultMotionState(startTransform);
+		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, colShape, localInertia);
+		btRigidBody* body = new btRigidBody(rbInfo);
+
+		body->setSleepingThresholds(0.05, 0.05);
+		body->setRollingFriction(rollFriction);
+		body->setDamping(damping, damping);
+		body->setUserIndex(int(ent));
+
+		m_CollisionShapes.push_back(colShape);
+		Registry.emplace<Components::Body>(ent, body);
+		Registry.emplace<Components::Mass>(ent, mass);
+		m_DynamicsWorld->addRigidBody(body);
+
+		return ent;
+	}
+
+	Entity PhysicsWorld::AddShape(const Shapes::Sphere& Descriptor)
+	{
+		Entity ent = World::AddShape(Descriptor);
+
+		btScalar rollFriction = 0.25;
+		glm::vec3 extents = Descriptor.GetDimensions();
+		btScalar mass = extents.x * extents.y * 0.5;
+		btCollisionShape* colShape = colShape = new btSphereShape(btScalar(extents.x));
 
 		btScalar damping = glm::min(rollFriction * mass * 0.01, 0.25);
 		btTransform startTransform;
@@ -177,7 +211,7 @@ namespace GR
 
 	void PhysicsWorld::Clear()
 	{
-		for (int i = 1; i < m_DynamicsWorld->getNumCollisionObjects(); ++i)
+		for (int i = 0; i < m_DynamicsWorld->getNumCollisionObjects(); ++i)
 		{
 			btCollisionObject* obj = m_DynamicsWorld->getCollisionObjectArray()[i];
 			btRigidBody* body = btRigidBody::upcast(obj);
@@ -190,45 +224,12 @@ namespace GR
 			delete obj;
 		}
 
-		for (int i = 1; i < m_CollisionShapes.size(); ++i)
+		for (int i = 0; i < m_CollisionShapes.size(); ++i)
 		{
 			delete m_CollisionShapes[i];
 		}
-		m_CollisionShapes.resize(1);
+		m_CollisionShapes.resize(0);
 
 		World::Clear();
-	}
-
-	void PhysicsWorld::_addPlanet(double r, btVector3 origin)
-	{
-		btCollisionShape* colShape = new btSphereShape(btScalar(r));
-		m_CollisionShapes.push_back(colShape);
-
-		btScalar mass(0.0);
-		btTransform startTransform;
-		btVector3 localInertia(0.0, 0.0, 0.0);
-		startTransform.setIdentity();
-		startTransform.setOrigin(origin);
-
-		btDefaultMotionState* myMotionState = new btDefaultMotionState(startTransform);
-		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, colShape, localInertia);
-		btRigidBody* body = new btRigidBody(rbInfo);
-
-		m_DynamicsWorld->addRigidBody(body);
-	}
-
-	void PhysicsWorld::_clearPlanet()
-	{
-		btCollisionObject* obj = m_DynamicsWorld->getCollisionObjectArray()[0];
-		btRigidBody* body = btRigidBody::upcast(obj);
-		if (body && body->getMotionState())
-		{
-			delete body->getMotionState();
-		}
-
-		m_DynamicsWorld->removeCollisionObject(obj);
-		delete obj;
-		delete m_CollisionShapes[0];
-		m_CollisionShapes.removeAtIndex(0);
 	}
 };
