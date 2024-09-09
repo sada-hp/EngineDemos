@@ -96,7 +96,7 @@ namespace GR
 
 		Entity AddShape(const Shapes::Sphere& Descriptor);
 
-		RayCastResult FirstAtRay(glm::vec3 Origin, glm::vec3 Direction, double Distance = 1e5) const;
+		RayCastResult FirstAtRay(glm::vec3 Origin, glm::vec3 Direction, double RayLen = 1e5) const;
 
 		void ObjectContactPoints(Entity object, std::vector<RayCastResult>& out);
 

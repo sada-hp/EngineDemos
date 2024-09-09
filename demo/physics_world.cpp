@@ -113,11 +113,11 @@ namespace GR
 		return ent;
 	}
 
-	RayCastResult PhysicsWorld::FirstAtRay(glm::vec3 Origin, glm::vec3 Direction, double Distance) const
+	RayCastResult PhysicsWorld::FirstAtRay(glm::vec3 Origin, glm::vec3 Direction, double RayLen) const
 	{
 		RayCastResult res{};
 		btVector3 toWorld = btVector3(Origin.x, Origin.y, Origin.z);
-		btVector3 fromWorld = toWorld + btVector3(Direction.x * Distance, Direction.y * Distance, Direction.z * Distance);
+		btVector3 fromWorld = toWorld + btVector3(Direction.x * RayLen, Direction.y * RayLen, Direction.z * RayLen);
 		btCollisionWorld::ClosestRayResultCallback callback(toWorld, fromWorld);
 
 		m_DynamicsWorld->rayTest(toWorld, fromWorld, callback);

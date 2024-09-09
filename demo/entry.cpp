@@ -267,9 +267,9 @@ int main(int argc, const char** argv)
 
 	Shapes::GeoClipmap Terrain{};
 	Terrain.m_Scale = 20.f;
-	Terrain.m_Rings = 10u;
+	Terrain.m_Rings = 8u;
 	Entity terrain = world.AddShape(Terrain);
-	world.GetComponent<Components::RGBColor>(terrain).Value = glm::vec3(0.0, 0.35, 0.0);
+	world.GetComponent<Components::RGBColor>(terrain).Value = glm::vec3(0.0, 1.0, 0.0);
 
 	camera.Projection.SetDepthRange(0.01, 1e5);
 
