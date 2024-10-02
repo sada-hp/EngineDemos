@@ -77,7 +77,7 @@ void MouseMove(Events::MousePosition Event, void* Data)
 		glm::vec3 dir = GetCursorDirection(window, camera);
 		Components::WorldMatrix& T = world.GetComponent<Components::WorldMatrix>(Selection);
 
-		glm::vec3 offset = glm::vec3(camera.View.GetOffset()) + glm::length(T.GetOffset() - glm::vec3(camera.View.GetOffset())) * dir;
+		glm::vec3 offset = glm::vec3(camera.View.GetOffset()) + float(glm::length(T.GetOffset() - camera.View.GetOffset())) * dir;
 		T.SetOffset(offset);
 		world.ResetObject(Selection);
 
@@ -111,7 +111,7 @@ void MouseScroll(Events::ScrollDelta Event, void* Data)
 		glm::vec3 dir = GetCursorDirection(window, camera);
 		Components::WorldMatrix& T = world.GetComponent<Components::WorldMatrix>(Selection);
 
-		glm::vec3 offset = glm::vec3(camera.View.GetOffset()) + float(1.0 + Event.y * 0.1) * glm::length(T.GetOffset() - glm::vec3(camera.View.GetOffset())) * dir;
+		glm::vec3 offset = glm::vec3(camera.View.GetOffset()) + float(1.0 + Event.y * 0.1) * float(glm::length(T.GetOffset() - camera.View.GetOffset())) * dir;
 		T.SetOffset(offset);
 		world.ResetObject(Selection);
 
@@ -263,15 +263,15 @@ int main(int argc, const char** argv)
 	listener.Subscribe(KeyPress);
 
 	// World setup
-	renderer.m_Camera.View.SetOffset({ 0.0, 25.0, 0.0 });
+	renderer.m_Camera.View.SetOffset({ 0.0, Renderer::Rg + 25.0, 0.0 });
 
 	Shapes::GeoClipmap Terrain{};
 	Terrain.m_Scale = 20.f;
-	Terrain.m_Rings = 8u;
+	Terrain.m_Rings = 12u;
 	Entity terrain = world.AddShape(Terrain);
 	world.GetComponent<Components::RGBColor>(terrain).Value = glm::vec3(0.0, 1.0, 0.0);
 
-	camera.Projection.SetDepthRange(0.01, 1e5);
+	camera.Projection.SetDepthRange(0.01, 1e6);
 
 	// Rendering
 	double delta = 0.0;
@@ -293,11 +293,12 @@ int main(int argc, const char** argv)
 		ControlWorld(renderer, world, delta);
 
 		// Render frame
-		renderer.BeginFrame();
+		if (renderer.BeginFrame())
+		{
+			world.DrawScene(delta);
+			UpdateUI(renderer, world);
 
-		world.DrawScene(delta);
-		UpdateUI(renderer, world);
-		
-		renderer.EndFrame();
+			renderer.EndFrame();
+		}
 	}
 };

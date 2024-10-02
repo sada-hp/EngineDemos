@@ -28,7 +28,7 @@ namespace GR
 	Entity PhysicsWorld::AddShape(const Shapes::GeoClipmap& Descriptor)
 	{
 		double r = Renderer::Rg;
-		btVector3 origin = btVector3(0.0, -r, 0.0);
+		btVector3 origin = btVector3(0.0, 0.0, 0.0);
 		btCollisionShape* colShape = new btSphereShape(btScalar(r));
 		m_CollisionShapes.push_back(colShape);
 
@@ -201,7 +201,7 @@ namespace GR
 			{
 				const double Fg = glm::sqrt(body.body->getMass()) * gravity; // made up
 				body.body->getWorldTransform().getOpenGLMatrix(glm::value_ptr(transform.matrix));
-				body.body->setGravity((body.body->getWorldTransform().getOrigin() + btVector3(0.0, Renderer::Rg, 0.0)).normalized() * Fg);
+				body.body->setGravity((body.body->getWorldTransform().getOrigin()).normalized() * Fg);
 			}
 		}
 		m_DynamicsWorld->stepSimulation(Delta, 10, fixedStep);

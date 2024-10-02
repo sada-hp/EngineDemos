@@ -20,7 +20,7 @@ namespace GR
 
 		struct Mass
 		{
-			float mass = 0.f;
+			btScalar mass = 0.f;
 		};
 	};
 

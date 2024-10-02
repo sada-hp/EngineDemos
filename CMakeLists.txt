@@ -11,5 +11,7 @@ if(INCLUDE_GUI)
     add_compile_definitions(INCLUDE_GUI)
 endif()
 
+add_compile_definitions(BT_USE_DOUBLE_PRECISION)
+
 add_subdirectory(engine)
 add_subdirectory(demo)
