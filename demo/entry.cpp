@@ -87,7 +87,7 @@ void LoadSpheresScene(Camera& camera, World& world)
 		for (uint32_t j = 0; j < 4; j++)
 		{
 			Entity ent = world.AddShape(shape);
-			world.GetComponent<Components::WorldMatrix>(ent).SetOffset(glm::vec3(i * 25.0, j * 25.0 + 20.0, 0.0));
+			world.GetComponent<Components::WorldMatrix>(ent).SetOffset(glm::dvec3(i * 25.0, Renderer::Rg + j * 25.0 + 20.0, 0.0));
 			world.GetComponent<Components::RGBColor>(ent).Value = glm::vec3(1.0, 0.0, 0.0);
 			world.GetComponent<Components::RoughnessMultiplier>(ent).Value = (i + 1) * 0.25;
 			world.GetComponent<Components::MetallicOverride>(ent).Value = (j + 1) * 0.25;
@@ -95,7 +95,7 @@ void LoadSpheresScene(Camera& camera, World& world)
 	}
 
 	CameraPYR = { 0.0, glm::radians(180.0), 0.0 };
-	camera.View.SetOffset({ 35.0, 55.0, 150.0 });
+	camera.View.SetOffset({ 35.0, Renderer::Rg + 55.0, 150.0 });
 	camera.View.SetRotation(CameraPYR.x, CameraPYR.y, CameraPYR.z);
 };
 
@@ -113,7 +113,7 @@ void LoadGRaff(Camera& camera, World& world)
 	world.GetComponent<Components::WorldMatrix>(ent).SetScale(2.0, 2.0, 2.0);
 
 	CameraPYR = { 0.0, glm::radians(180.0), 0.0 };
-	camera.View.SetOffset({ -2.5, 55.0, 35.0 });
+	camera.View.SetOffset({ -2.5, Renderer::Rg + 55.0, 35.0 });
 	camera.View.SetRotation(CameraPYR.x, CameraPYR.y, CameraPYR.z);
 };
 
@@ -126,7 +126,7 @@ void LoadMaterialWall(Camera& camera, World& world)
 
 	Entity ent = world.AddShape(shape);
 	CameraPYR = { 0.0, glm::radians(210.0), 0.0 };
-	camera.View.SetOffset({ 10.0, 50.0, 20.0 });
+	camera.View.SetOffset({ 10.0, Renderer::Rg + 50.0, 20.0 });
 	camera.View.SetRotation(CameraPYR.x, CameraPYR.y, CameraPYR.z);
 };
 
@@ -195,14 +195,13 @@ inline void ControlWorld(Renderer& renderer, World& world, double Delta)
 	if (LoadedScene == 0)
 	{
 		Components::WorldMatrix& wld = world.GetComponent<Components::WorldMatrix>(world.Registry.view<Entity>().front());
-		wld.SetOffset(glm::vec3(0.0, 50.0, 0.0));
 		wld.SetRotation(glm::radians(-90.0), 0.0, 0.0);
-		wld.SetOffset(glm::vec3(0.0, 50.0 + glm::sin(global_angle) * 2.5, 0.0));
+		wld.SetOffset(glm::dvec3(0.0, Renderer::Rg + 50.0 + glm::sin(global_angle) * 2.5, 0.0));
 	}
 	else if (LoadedScene == 2)
 	{
 		Components::WorldMatrix& wld = world.GetComponent<Components::WorldMatrix>(world.Registry.view<Entity>().front());
-		wld.SetOffset(glm::vec3(0.0, 50.0 + glm::sin(global_angle) * 2.5, 0.0));
+		wld.SetOffset(glm::dvec3(0.0, Renderer::Rg + 50.0 + glm::sin(global_angle) * 2.5, 0.0));
 		wld.Rotate(0.0, 0.01, 0.0);
 	}
 };
@@ -289,12 +288,13 @@ int main(int argc, const char** argv)
 		ControlWorld(renderer, world, delta);
 
 		// Render frame
-		renderer.BeginFrame();
+		if (renderer.BeginFrame())
+		{
+			world.DrawScene(delta);
+			UpdateUI(renderer, world);
 
-		world.DrawScene(delta);
-		UpdateUI(renderer, world);
-
-		renderer.EndFrame();
+			renderer.EndFrame();
+		}
 	}
 	world.Clear();
 };
