@@ -95,8 +95,8 @@ void LoadSpheresScene(Camera& camera, World& world)
 	}
 
 	CameraPYR = { 0.0, glm::radians(180.0), 0.0 };
-	camera.View.SetOffset({ 35.0, Renderer::Rg + 55.0, 150.0 });
-	camera.View.SetRotation(CameraPYR.x, CameraPYR.y, CameraPYR.z);
+	camera.Transform.SetOffset({ 35.0, Renderer::Rg + 55.0, 150.0 });
+	camera.Transform.SetRotation(CameraPYR.x, CameraPYR.y, CameraPYR.z);
 };
 
 void LoadGRaff(Camera& camera, World& world)
@@ -113,8 +113,8 @@ void LoadGRaff(Camera& camera, World& world)
 	world.GetComponent<Components::WorldMatrix>(ent).SetScale(2.0, 2.0, 2.0);
 
 	CameraPYR = { 0.0, glm::radians(180.0), 0.0 };
-	camera.View.SetOffset({ -2.5, Renderer::Rg + 55.0, 35.0 });
-	camera.View.SetRotation(CameraPYR.x, CameraPYR.y, CameraPYR.z);
+	camera.Transform.SetOffset({ -2.5, Renderer::Rg + 55.0, 35.0 });
+	camera.Transform.SetRotation(CameraPYR.x, CameraPYR.y, CameraPYR.z);
 };
 
 void LoadMaterialWall(Camera& camera, World& world)
@@ -126,8 +126,8 @@ void LoadMaterialWall(Camera& camera, World& world)
 
 	Entity ent = world.AddShape(shape);
 	CameraPYR = { 0.0, glm::radians(210.0), 0.0 };
-	camera.View.SetOffset({ 10.0, Renderer::Rg + 50.0, 20.0 });
-	camera.View.SetRotation(CameraPYR.x, CameraPYR.y, CameraPYR.z);
+	camera.Transform.SetOffset({ 10.0, Renderer::Rg + 50.0, 20.0 });
+	camera.Transform.SetRotation(CameraPYR.x, CameraPYR.y, CameraPYR.z);
 };
 
 inline void UpdateResources(Camera& camera, World& world)
@@ -171,9 +171,9 @@ inline void ControlCamera(GR::Camera& camera, double delta)
 	if (KeyStates[Enums::EKey::PageUp] != Enums::EAction::Release) off.y += speed_mult * delta;
 	if (KeyStates[Enums::EKey::PageDown] != Enums::EAction::Release) off.y -= speed_mult * delta;
 
-	camera.View.Translate(off);
+	camera.Transform.Translate(off);
 
-	glm::vec3 U = glm::normalize(glm::dvec3(0.0, Renderer::Rg, 0.0) + camera.View.GetOffset());
+	glm::vec3 U = glm::normalize(glm::dvec3(0.0, Renderer::Rg, 0.0) + camera.Transform.GetOffset());
 	glm::quat p = glm::rotation(glm::vec3(0.0, 1.0, 0.0), U);
 
 	glm::quat q = angleAxis(CameraPYR.y, U);
@@ -181,10 +181,7 @@ inline void ControlCamera(GR::Camera& camera, double delta)
 	q = q * glm::angleAxis(-CameraPYR.x, p * glm::vec3(1, 0, 0));
 
 	glm::mat3 M = glm::mat3_cast(q * p);
-
-	camera.View.matrix[0] = glm::dvec4(glm::normalize(M[0]), 0.0);
-	camera.View.matrix[1] = glm::dvec4(glm::normalize(M[1]), 0.0);
-	camera.View.matrix[2] = glm::dvec4(glm::normalize(M[2]), 0.0);
+	camera.Transform.SetRotation(M);
 };
 
 inline void ControlWorld(Renderer& renderer, World& world, double Delta)
