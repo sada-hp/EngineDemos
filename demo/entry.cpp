@@ -101,9 +101,9 @@ inline void ControlCamera(GR::Camera& camera, double delta)
 	if (KeyStates[Enums::EKey::PageUp] != Enums::EAction::Release) off.y += speed_mult * delta;
 	if (KeyStates[Enums::EKey::PageDown] != Enums::EAction::Release) off.y -= speed_mult * delta;
 
-	camera.View.Translate(off);
+	camera.Transform.Translate(off);
 
-	glm::vec3 U = glm::normalize(glm::dvec3(0.0, Renderer::Rg, 0.0) + camera.View.GetOffset());
+	glm::vec3 U = glm::normalize(glm::dvec3(0.0, Renderer::Rg, 0.0) + camera.Transform.GetOffset());
 	glm::quat p = glm::rotation(glm::vec3(0.0, 1.0, 0.0), U);
 
 	glm::quat q = angleAxis(CameraPYR.y, U);
@@ -111,10 +111,7 @@ inline void ControlCamera(GR::Camera& camera, double delta)
 	q = q * glm::angleAxis(-CameraPYR.x, p * glm::vec3(1, 0, 0));
 
 	glm::mat3 M = glm::mat3_cast(q * p);
-
-	camera.View.matrix[0] = glm::dvec4(glm::normalize(M[0]), 0.0);
-	camera.View.matrix[1] = glm::dvec4(glm::normalize(M[1]), 0.0);
-	camera.View.matrix[2] = glm::dvec4(glm::normalize(M[2]), 0.0);
+	camera.Transform.SetRotation(M);
 };
 
 inline void ControlWorld(Renderer& renderer, double delta)
@@ -145,7 +142,7 @@ int main(int argc, const char** argv)
 	listener.Subscribe(KeyPress);
 
 	// World setup
-	renderer.m_Camera.View.SetOffset({ 0.0, Renderer::Rg + 50.0, 0.0 });
+	renderer.m_Camera.Transform.SetOffset({ 0.0, Renderer::Rg + 50.0, 0.0 });
 
 	// Rendering
 	double delta = 0.0;
