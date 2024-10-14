@@ -156,7 +156,8 @@ namespace GR
 		btRigidBody* body = GetComponent<Components::Body>(object).body;
 
 		btTransform physTransform;
-		physTransform.setFromOpenGLMatrix(glm::value_ptr(transform.matrix));
+		glm::dmat4 T = transform.GetMatrix();
+		physTransform.setFromOpenGLMatrix(glm::value_ptr(T));
 		body->setWorldTransform(physTransform);
 		body->clearForces();
 		body->clearGravity();
@@ -175,7 +176,8 @@ namespace GR
 		btRigidBody* body = GetComponent<Components::Body>(object).body;
 
 		btTransform physTransform;
-		physTransform.setFromOpenGLMatrix(glm::value_ptr(transform.matrix));
+		glm::dmat4 T = transform.GetMatrix();
+		physTransform.setFromOpenGLMatrix(glm::value_ptr(T));
 		body->setWorldTransform(physTransform);
 	}
 
@@ -199,8 +201,11 @@ namespace GR
 		{
 			if (body.body->getActivationState() == ACTIVE_TAG)
 			{
+				glm::dmat4 T;
+				body.body->getWorldTransform().getOpenGLMatrix(glm::value_ptr(T));
+				transform.SetFromMatrix(T);
+
 				const double Fg = glm::sqrt(body.body->getMass()) * gravity; // made up
-				body.body->getWorldTransform().getOpenGLMatrix(glm::value_ptr(transform.matrix));
 				body.body->setGravity((body.body->getWorldTransform().getOrigin()).normalized() * Fg);
 			}
 		}

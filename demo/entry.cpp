@@ -48,7 +48,7 @@ void MousePress(Events::MousePress Event, void* Data)
 	if (Event.key == Enums::EMouse::Right && Event.action == Enums::EAction::Press)
 	{
 		glm::vec3 dir = GetCursorDirection(window, camera);
-		RayCastResult rayCast = world.FirstAtRay(camera.View.GetOffset(), dir);
+		RayCastResult rayCast = world.FirstAtRay(camera.Transform.GetOffset(), dir);
 		Selection = rayCast.id;
 
 		//printf("%d \n", int(rayCast.id));
@@ -77,7 +77,7 @@ void MouseMove(Events::MousePosition Event, void* Data)
 		glm::vec3 dir = GetCursorDirection(window, camera);
 		Components::WorldMatrix& T = world.GetComponent<Components::WorldMatrix>(Selection);
 
-		glm::vec3 offset = glm::vec3(camera.View.GetOffset()) + float(glm::length(T.GetOffset() - camera.View.GetOffset())) * dir;
+		glm::vec3 offset = glm::vec3(camera.Transform.GetOffset()) + float(glm::length(T.GetOffset() - camera.Transform.GetOffset())) * dir;
 		T.SetOffset(offset);
 		world.ResetObject(Selection);
 
@@ -111,7 +111,7 @@ void MouseScroll(Events::ScrollDelta Event, void* Data)
 		glm::vec3 dir = GetCursorDirection(window, camera);
 		Components::WorldMatrix& T = world.GetComponent<Components::WorldMatrix>(Selection);
 
-		glm::vec3 offset = glm::vec3(camera.View.GetOffset()) + float(1.0 + Event.y * 0.1) * float(glm::length(T.GetOffset() - camera.View.GetOffset())) * dir;
+		glm::vec3 offset = glm::vec3(camera.Transform.GetOffset()) + float(1.0 + Event.y * 0.1) * float(glm::length(T.GetOffset() - camera.Transform.GetOffset())) * dir;
 		T.SetOffset(offset);
 		world.ResetObject(Selection);
 
@@ -150,7 +150,7 @@ void SpawnSphere(Renderer& renderer, PhysicsWorld& world)
 	sphere.m_Slices = 64u;
 
 	Entity object = world.AddShape(sphere);
-	world.GetComponent<Components::WorldMatrix>(object).SetOffset(camera.View.GetOffset() + camera.View.GetForward() * (50.0 * ObjectScale));
+	world.GetComponent<Components::WorldMatrix>(object).SetOffset(camera.Transform.GetOffset() + static_cast<glm::dvec3>(camera.Transform.GetForward()) * (50.0 * ObjectScale));
 	world.GetComponent<Components::RGBColor>(object).Value = ColorModifier;
 	world.ResetPosition(object);
 };
@@ -163,7 +163,7 @@ void SpawnBox(Renderer& renderer, PhysicsWorld& world)
 	sphere.m_Scale = ObjectScale * 30.f;
 
 	Entity object = world.AddShape(sphere);
-	world.GetComponent<Components::WorldMatrix>(object).SetOffset(camera.View.GetOffset() + camera.View.GetForward() * (50.0 * ObjectScale));
+	world.GetComponent<Components::WorldMatrix>(object).SetOffset(camera.Transform.GetOffset() + static_cast<glm::dvec3>(camera.Transform.GetForward()) * (50.0 * ObjectScale));
 	world.GetComponent<Components::RGBColor>(object).Value = ColorModifier;
 	world.ResetPosition(object);
 };
@@ -217,9 +217,9 @@ inline void ControlCamera(Camera& camera, double delta)
 	if (KeyStates[Enums::EKey::PageUp] != Enums::EAction::Release) off.y += speed_mult * delta;
 	if (KeyStates[Enums::EKey::PageDown] != Enums::EAction::Release) off.y -= speed_mult * delta;
 
-	camera.View.Translate(off);
+	camera.Transform.Translate(off);
 
-	glm::vec3 U = glm::normalize(glm::dvec3(0.0, Renderer::Rg, 0.0) + camera.View.GetOffset());
+	glm::vec3 U = glm::normalize(glm::dvec3(0.0, Renderer::Rg, 0.0) + camera.Transform.GetOffset());
 	glm::quat p = glm::rotation(glm::vec3(0.0, 1.0, 0.0), U);
 
 	glm::quat q = angleAxis(CameraPYR.y, U);
@@ -227,10 +227,7 @@ inline void ControlCamera(Camera& camera, double delta)
 	q = q * glm::angleAxis(-CameraPYR.x, p * glm::vec3(1, 0, 0));
 
 	glm::mat3 M = glm::mat3_cast(q * p);
-
-	camera.View.matrix[0] = glm::dvec4(glm::normalize(M[0]), 0.0);
-	camera.View.matrix[1] = glm::dvec4(glm::normalize(M[1]), 0.0);
-	camera.View.matrix[2] = glm::dvec4(glm::normalize(M[2]), 0.0);
+	camera.Transform.SetRotation(M);
 };
 
 inline void ControlWorld(Renderer& renderer, PhysicsWorld& world, double delta)
@@ -263,7 +260,7 @@ int main(int argc, const char** argv)
 	listener.Subscribe(KeyPress);
 
 	// World setup
-	renderer.m_Camera.View.SetOffset({ 0.0, Renderer::Rg + 25.0, 0.0 });
+	renderer.m_Camera.Transform.SetOffset({ 0.0, Renderer::Rg + 25.0, 0.0 });
 
 	Shapes::GeoClipmap Terrain{};
 	Terrain.m_Scale = 20.f;
