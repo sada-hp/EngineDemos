@@ -199,7 +199,7 @@ inline void ControlWorld(Renderer& renderer, World& world, double Delta)
 	{
 		Components::WorldMatrix& wld = world.GetComponent<Components::WorldMatrix>(world.Registry.view<Entity>().front());
 		wld.SetOffset(glm::dvec3(0.0, Renderer::Rg + 50.0 + glm::sin(global_angle) * 2.5, 0.0));
-		wld.Rotate(0.0, 0.01, 0.0);
+		wld.Rotate(0.0, Delta, 0.0);
 	}
 };
 
