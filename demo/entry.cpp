@@ -12,7 +12,7 @@ std::map<Enums::EKey, Enums::EAction> KeyStates;
 CloudLayerProfile CloudLayer{};
 CloudLayerProfile CloudLayer_Old{};
 bool MousePressed = false;
-double speed_mult = 100.0;
+double speed_mult = 25000.0;
 float Sun = 1.0;
 
 void MousePress(Events::MousePress Event, void* Data)
@@ -33,7 +33,7 @@ void MouseMove(Events::MousePosition Event, void* Data)
 
 void MouseScroll(Events::ScrollDelta Event, void* Data)
 {
-	speed_mult = glm::clamp(speed_mult + 100.0 * Event.y, 1.0, 10000.0);
+	speed_mult = glm::clamp(speed_mult + 100.0 * Event.y, 1.0, 100000.0);
 };
 
 void KeyPress(Events::KeyPress Event, void* Data)
@@ -98,7 +98,7 @@ inline void ControlCamera(GR::Camera& camera, double delta)
 	
 	camera.Transform.Translate(off);
 
-	glm::vec3 U = glm::normalize(glm::dvec3(0.0, Renderer::Rg, 0.0) + camera.Transform.GetOffset());
+	glm::vec3 U = glm::normalize(camera.Transform.GetOffset());
 	glm::quat p = glm::rotation(glm::vec3(0.0, 1.0, 0.0), U);
 
 	glm::quat q = angleAxis(CameraPYR.y, U);
@@ -127,6 +127,7 @@ int main(int argc, const char** argv)
 	Renderer& renderer = window.GetRenderer();
 	Camera& camera = renderer.m_Camera;
 	EventListener listener = {};
+	World world(renderer);
 
 	// Events setup
 	window.SetUpEvents(listener);
@@ -137,7 +138,18 @@ int main(int argc, const char** argv)
 	listener.Subscribe(KeyPress);
 
 	// World setup
-	renderer.m_Camera.Transform.SetOffset({ 0.0, Renderer::Rg + 50.0, 0.0 });
+	renderer.m_Camera.Transform.SetOffset({ 0.0, Renderer::Rg + 5000.0, 0.0 });
+	camera.Projection.SetDepthRange(0.01, 1e6);
+
+	Shapes::GeoClipmap Terrain;
+	Terrain.m_Rings = 15.f;
+	Terrain.m_Scale = 10.f;
+
+
+	Entity TerrainEntity = world.AddShape(Terrain);
+	world.GetComponent<Components::RGBColor>(TerrainEntity).Value = glm::vec3(0.0, 1.0, 0.0);
+
+	CloudLayer.Coverage = 0.0;
 
 	// Rendering
 	double delta = 0.0;
@@ -160,7 +172,9 @@ int main(int argc, const char** argv)
 		{
 			UpdateUI(renderer);
 
+			world.DrawScene(delta);
+
 			renderer.EndFrame();
 		}
 	}
-};
+}; 
