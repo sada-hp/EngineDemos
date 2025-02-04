@@ -6,6 +6,7 @@ project(DemoPrj)
 set(COPY_PATH ${DemoPrj_SOURCE_DIR}/bin)
 
 set(INCLUDE_GUI 1)
+add_compile_definitions(FORCE_VSYNC)
 
 if(INCLUDE_GUI)
     add_compile_definitions(INCLUDE_GUI)
