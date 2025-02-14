@@ -123,7 +123,7 @@ inline void ControlWorld(Renderer& renderer, double delta)
 int main(int argc, const char** argv)
 {
 	// Systems setup
-	Window window(1024, 720, "Volumetric clouds demo");
+	Window window(1024, 720, "Procedural planet demo ");
 	Renderer& renderer = window.GetRenderer();
 	Camera& camera = renderer.m_Camera;
 	EventListener listener = {};
@@ -142,12 +142,19 @@ int main(int argc, const char** argv)
 	camera.Projection.SetDepthRange(0.01, 1e6);
 
 	Shapes::GeoClipmap Terrain;
-	Terrain.m_Rings = 15.f;
-	Terrain.m_Scale = 10.f;
-
-
+	Terrain.m_Rings = 8u;
+	Terrain.m_Scale = 200.f;
+	Terrain.m_VerPerRing = 255u;
+	Terrain.m_MinHeight = 30.f;
+	Terrain.m_MaxHeight = 10000.f;
+#if 1
+	Terrain.m_NoiseSeed = uint32_t(&Terrain);
+#else
+	Terrain.m_NoiseSeed = 0u;
+#endif
 	Entity TerrainEntity = world.AddShape(Terrain);
-	world.GetComponent<Components::RGBColor>(TerrainEntity).Value = glm::vec3(0.0, 1.0, 0.0);
+	world.BindTexture(world.GetComponent<Components::AlbedoMap>(TerrainEntity), "content\\grass_albedo.jpg");
+	world.BindTexture(world.GetComponent<Components::AORoughnessMetallicMap>(TerrainEntity), "content\\grass_arm.png");
 
 	CloudLayer.Coverage = 0.0;
 
@@ -159,7 +166,7 @@ int main(int argc, const char** argv)
 		// Update delta
 		auto time = Utils::GetTime();
 		delta = time - last_time;
-		window.SetTitle(("Volumetric clouds demo " + std::format("{:.1f}", 1.0 / delta)).c_str());
+		window.SetTitle(("Procedural planet demo " + std::format("{:.1f}", 1.0 / delta)).c_str());
 		last_time = time;
 
 		// Update simulation
