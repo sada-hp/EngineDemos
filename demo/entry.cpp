@@ -13,7 +13,7 @@ CloudLayerProfile CloudLayer{};
 CloudLayerProfile CloudLayer_Old{};
 bool MousePressed = false;
 double speed_mult = 25000.0;
-float Sun = 1.0;
+float Sun = 0.53;
 
 void MousePress(Events::MousePress Event, void* Data)
 {
@@ -126,16 +126,16 @@ int main(int argc, const char** argv)
 	Window window(1024, 720, "Procedural planet demo ");
 	Renderer& renderer = window.GetRenderer();
 	Camera& camera = renderer.m_Camera;
-	EventListener listener = {};
+	std::unique_ptr<EventListener> listener = std::make_unique<EventListener>();
 	World world(renderer);
 
 	// Events setup
-	window.SetUpEvents(listener);
-	listener.SetUserPointer(&window);
-	listener.Subscribe(MouseScroll);
-	listener.Subscribe(MousePress);
-	listener.Subscribe(MouseMove);
-	listener.Subscribe(KeyPress);
+	window.SetUpEvents(*listener);
+	listener->SetUserPointer(&window);
+	listener->Subscribe(MouseScroll);
+	listener->Subscribe(MousePress);
+	listener->Subscribe(MouseMove);
+	listener->Subscribe(KeyPress);
 
 	// World setup
 	renderer.m_Camera.Transform.SetOffset({ 0.0, Renderer::Rg + 5000.0, 0.0 });
@@ -143,14 +143,14 @@ int main(int argc, const char** argv)
 
 	Shapes::GeoClipmap Terrain;
 	Terrain.m_Rings = 8u;
-	Terrain.m_Scale = 200.f;
+	Terrain.m_Scale = 1000.f;
 	Terrain.m_VerPerRing = 255u;
 	Terrain.m_MinHeight = 30.f;
 	Terrain.m_MaxHeight = 10000.f;
 #if 1
 	Terrain.m_NoiseSeed = uint32_t(&Terrain);
 #else
-	Terrain.m_NoiseSeed = 0u;
+	Terrain.m_NoiseSeed = 1u;
 #endif
 	Entity TerrainEntity = world.AddShape(Terrain);
 	world.BindTexture(world.GetComponent<Components::AlbedoMap>(TerrainEntity), "content\\grass_albedo.jpg");
@@ -184,4 +184,4 @@ int main(int argc, const char** argv)
 			renderer.EndFrame();
 		}
 	}
-}; 
+};
