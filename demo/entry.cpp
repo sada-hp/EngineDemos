@@ -13,7 +13,7 @@ CloudLayerProfile CloudLayer{};
 CloudLayerProfile CloudLayer_Old{};
 bool MousePressed = false;
 double speed_mult = 25000.0;
-float Sun = 0.53;
+float Sun = 1.0;
 
 void MousePress(Events::MousePress Event, void* Data)
 {
@@ -33,7 +33,7 @@ void MouseMove(Events::MousePosition Event, void* Data)
 
 void MouseScroll(Events::ScrollDelta Event, void* Data)
 {
-	speed_mult = glm::clamp(speed_mult + 100.0 * Event.y, 1.0, 100000.0);
+	speed_mult = glm::clamp(speed_mult + 10000.0 * Event.y, 1.0, 1000000.0);
 };
 
 void KeyPress(Events::KeyPress Event, void* Data)
@@ -139,24 +139,24 @@ int main(int argc, const char** argv)
 
 	// World setup
 	renderer.m_Camera.Transform.SetOffset({ 0.0, Renderer::Rg + 5000.0, 0.0 });
-	camera.Projection.SetDepthRange(0.01, 1e6);
+	camera.Projection.SetDepthRange(0.01, 1e9);
 
 	Shapes::GeoClipmap Terrain;
 	Terrain.m_Rings = 8u;
-	Terrain.m_Scale = 1000.f;
-	Terrain.m_VerPerRing = 255u;
+	Terrain.m_Scale = 500.f;
+	Terrain.m_VerPerRing = 511u;
 	Terrain.m_MinHeight = 30.f;
-	Terrain.m_MaxHeight = 10000.f;
+	Terrain.m_MaxHeight = 35000.f;
 #if 1
 	Terrain.m_NoiseSeed = uint32_t(&Terrain);
 #else
 	Terrain.m_NoiseSeed = 1u;
 #endif
 	Entity TerrainEntity = world.AddShape(Terrain);
-	world.BindTexture(world.GetComponent<Components::AlbedoMap>(TerrainEntity), "content\\grass_albedo.jpg");
-	world.BindTexture(world.GetComponent<Components::AORoughnessMetallicMap>(TerrainEntity), "content\\grass_arm.png");
+	world.BindTexture(world.GetComponent<Components::AlbedoMap>(TerrainEntity), "content\\grass_albedo.png");
+	world.BindTexture(world.GetComponent<Components::AORoughnessMetallicMapTransmittance>(TerrainEntity), "content\\grass_armt.png");
+	world.BindTexture(world.GetComponent<Components::NormalDisplacementMap>(TerrainEntity), "content\\grass_normal.png");
 
-	CloudLayer.Coverage = 0.0;
 
 	// Rendering
 	double delta = 0.0;
