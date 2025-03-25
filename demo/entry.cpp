@@ -54,19 +54,20 @@ void LoadMaterial(World& world, int ID)
 	switch (ID)
 	{
 	case 0:
-		world.BindTexture(world.GetComponent<Components::AlbedoMap>(ent), "content\\brick_albedo.jpg");
-		world.BindTexture(world.GetComponent<Components::NormalDisplacementMap>(ent), "content\\brick_nh.png");
-		world.BindTexture(world.GetComponent<Components::AORoughnessMetallicMap>(ent), "content\\brick_arm.jpg");
+		world.BindTexture(world.GetComponent<Components::AlbedoMap>(ent), "content\\metal_albedo.jpg");
+		world.BindTexture(world.GetComponent<Components::NormalDisplacementMap>(ent), "content\\metal_nh.png");
+		world.BindTexture(world.GetComponent<Components::AORoughnessMetallicMapTransmittance>(ent), "content\\metal_arm.jpg");
 		break;
 	case 1:
 		world.BindTexture(world.GetComponent<Components::AlbedoMap>(ent), "content\\concrete_albedo.jpg");
 		world.BindTexture(world.GetComponent<Components::NormalDisplacementMap>(ent), "content\\concrete_nh.png");
-		world.BindTexture(world.GetComponent<Components::AORoughnessMetallicMap>(ent), "content\\concrete_arm.jpg");
+		world.BindTexture(world.GetComponent<Components::AORoughnessMetallicMapTransmittance>(ent), "content\\concrete_arm.jpg");
 		break;
 	case 2:
-		world.BindTexture(world.GetComponent<Components::AlbedoMap>(ent), "content\\metal_albedo.jpg");
-		world.BindTexture(world.GetComponent<Components::NormalDisplacementMap>(ent), "content\\metal_nh.png");
-		world.BindTexture(world.GetComponent<Components::AORoughnessMetallicMap>(ent), "content\\metal_arm.jpg");
+
+		world.BindTexture(world.GetComponent<Components::AlbedoMap>(ent), "content\\brick_albedo.jpg");
+		world.BindTexture(world.GetComponent<Components::NormalDisplacementMap>(ent), "content\\brick_nh.png");
+		world.BindTexture(world.GetComponent<Components::AORoughnessMetallicMapTransmittance>(ent), "content\\brick_arm.jpg");
 		break;
 	default:
 		break;
@@ -82,20 +83,20 @@ void LoadSpheresScene(Camera& camera, World& world)
 	shape.m_Rings = 64u;
 	shape.m_Slices = 64u;
 
-	for (uint32_t i = 0; i < 4; i++)
+	for (uint32_t i = 0; i <= 4; i++)
 	{
-		for (uint32_t j = 0; j < 4; j++)
+		for (uint32_t j = 0; j <= 4; j++)
 		{
 			Entity ent = world.AddShape(shape);
 			world.GetComponent<Components::WorldMatrix>(ent).SetOffset(glm::dvec3(i * 25.0, Renderer::Rg + j * 25.0 + 20.0, 0.0));
 			world.GetComponent<Components::RGBColor>(ent).Value = glm::vec3(1.0, 0.0, 0.0);
-			world.GetComponent<Components::RoughnessMultiplier>(ent).Value = (i + 1) * 0.25;
-			world.GetComponent<Components::MetallicOverride>(ent).Value = (j + 1) * 0.25;
+			world.GetComponent<Components::RoughnessMultiplier>(ent).Value = i * 0.25;
+			world.GetComponent<Components::MetallicOverride>(ent).Value = j * 0.25;
 		}
 	}
 
 	CameraPYR = { 0.0, glm::radians(180.0), 0.0 };
-	camera.Transform.SetOffset({ 35.0, Renderer::Rg + 55.0, 150.0 });
+	camera.Transform.SetOffset({ 35.0, Renderer::Rg + 55.0, 250.0 });
 	camera.Transform.SetRotation(CameraPYR.x, CameraPYR.y, CameraPYR.z);
 };
 
@@ -109,7 +110,7 @@ void LoadGRaff(Camera& camera, World& world)
 
 	world.BindTexture(world.GetComponent<Components::AlbedoMap>(ent), "content\\graff_albedo.jpg");
 	world.BindTexture(world.GetComponent<Components::NormalDisplacementMap>(ent), "content\\graff_nh.png");
-	world.BindTexture(world.GetComponent<Components::AORoughnessMetallicMap>(ent), "content\\graff_arm.jpg");
+	world.BindTexture(world.GetComponent<Components::AORoughnessMetallicMapTransmittance>(ent), "content\\graff_arm.jpg");
 	world.GetComponent<Components::WorldMatrix>(ent).SetScale(2.0, 2.0, 2.0);
 
 	CameraPYR = { 0.0, glm::radians(180.0), 0.0 };
@@ -232,7 +233,7 @@ inline void UpdateUI(Renderer& renderer, World& world)
 		Components::DisplacementScale& HM = world.GetComponent<Components::DisplacementScale>(world.Registry.view<Entity>().front());
 		ImGui::SliderFloat("Height mult", &HM.Value, 0.1, 10.0);
 
-		const char* Materials[3] = { "Brick", "Concrete", "Painted metal" };
+		const char* Materials[3] = { "Painted metal", "Concrete", "Brick" };
 		ImGui::Combo("Materials", &MaterialID, Materials, 3);
 	}
 	else if (LoadedScene == 2)
