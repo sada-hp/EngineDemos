@@ -3,7 +3,7 @@
 
 namespace GR
 {
-	PhysicsWorld::PhysicsWorld(const Renderer& Context)
+	PhysicsWorld::PhysicsWorld(Renderer& Context)
 		: World(Context)
 	{
 		m_Broadphase = new btDbvtBroadphase;
@@ -27,7 +27,7 @@ namespace GR
 
 	Entity PhysicsWorld::AddShape(const Shapes::GeoClipmap& Descriptor)
 	{
-		double r = Renderer::Rg;
+		double r = Renderer::Rg + Descriptor.m_MinHeight;
 		btVector3 origin = btVector3(0.0, 0.0, 0.0);
 		btCollisionShape* colShape = new btSphereShape(btScalar(r));
 		m_CollisionShapes.push_back(colShape);

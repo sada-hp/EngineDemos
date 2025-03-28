@@ -265,6 +265,7 @@ int main(int argc, const char** argv)
 	Shapes::GeoClipmap Terrain{};
 	Terrain.m_Scale = 20.f;
 	Terrain.m_Rings = 12u;
+	Terrain.m_MinHeight = 100.f;
 	Entity terrain = world.AddShape(Terrain);
 	world.GetComponent<Components::RGBColor>(terrain).Value = glm::vec3(0.0, 1.0, 0.0);
 

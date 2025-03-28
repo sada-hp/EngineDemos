@@ -86,7 +86,7 @@ namespace GR
 		float gravity = -9.8f;
 
 	public:
-		PhysicsWorld(const Renderer& Context);
+		PhysicsWorld(Renderer& Context);
 
 		virtual ~PhysicsWorld();
 
