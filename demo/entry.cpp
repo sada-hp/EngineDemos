@@ -15,6 +15,8 @@ bool MousePressed = false;
 double speed_mult = 25000.0;
 float Sun = 1.0;
 
+glm::vec3 CameraGeo = glm::vec3(0.0f, glm::radians(90.f), 5000.f);
+
 void MousePress(Events::MousePress Event, void* Data)
 {
 	Window* wnd = static_cast<Window*>(Data);
@@ -138,25 +140,38 @@ int main(int argc, const char** argv)
 	listener->Subscribe(KeyPress);
 
 	// World setup
-	renderer.m_Camera.Transform.SetOffset({ 0.0, Renderer::Rg + 5000.0, 0.0 });
+	// renderer.m_Camera.Transform.SetOffset(0.0, Renderer::Rg + 5000.0, 0.0);
+	renderer.m_Camera.Transform.SetOffsetFromGeo(CameraGeo.x, CameraGeo.y, CameraGeo.z, Renderer::Rg);
 	camera.Projection.SetDepthRange(0.01, 1e9);
+
+	CloudLayer.Coverage = 0.0;
 
 	Shapes::GeoClipmap Terrain;
 	Terrain.m_Rings = 8u;
-	Terrain.m_Scale = 500.f;
-	Terrain.m_VerPerRing = 511u;
-	Terrain.m_MinHeight = 30.f;
+	Terrain.m_Scale = 100.f;
+	Terrain.m_VerPerRing = 1023u;
+	Terrain.m_MinHeight = 3000.f;
 	Terrain.m_MaxHeight = 35000.f;
 #if 1
 	Terrain.m_NoiseSeed = uint32_t(&Terrain);
 #else
 	Terrain.m_NoiseSeed = 1u;
 #endif
-	Entity TerrainEntity = world.AddShape(Terrain);
-	world.BindTexture(world.GetComponent<Components::AlbedoMap>(TerrainEntity), "content\\grass_albedo.png");
-	world.BindTexture(world.GetComponent<Components::AORoughnessMetallicMapTransmittance>(TerrainEntity), "content\\grass_armt.png");
-	world.BindTexture(world.GetComponent<Components::NormalDisplacementMap>(TerrainEntity), "content\\grass_normal.png");
 
+	// GR::Utils::ConvertImage_ARMT("content\\moss_r.jpg", "", "content\\moss_ao.jpg", "content\\moss_t.jpg", "content\\moss_arm.png");
+	// GR::Utils::ConvertImage_ARMT("content\\snow_r.jpg", "", "content\\snow_ao.jpg", "content\\snow_t.jpg", "content\\snow_arm.png");
+	// GR::Utils::ConvertImage_ARMT("content\\rock_r.jpg", "", "content\\rock_ao.jpg", "", "content\\rock_arm.png");
+	// GR::Utils::ConvertImage_ARMT("content\\sand_r.jpg", "", "content\\sand_ao.jpg", "", "content\\sand_arm.png");
+
+	// GR::Utils::ConvertImage_NormalHeight("content\\moss_n.jpg", "", "content\\moss_nh.png");
+	// GR::Utils::ConvertImage_NormalHeight("content\\snow_n.jpg", "", "content\\snow_nh.png");
+	// GR::Utils::ConvertImage_NormalHeight("content\\rock_n.jpg", "", "content\\rock_nh.png");
+	// GR::Utils::ConvertImage_NormalHeight("content\\sand_n.jpg", "", "content\\sand_nh.png");
+
+	Entity TerrainEntity = world.AddShape(Terrain);
+	world.BindTexture(world.GetComponent<Components::AlbedoMap>(TerrainEntity), std::vector<std::string>{ "content\\moss_albedo.jpg", "content\\rock_albedo.jpg", "content\\sand_albedo.jpg", "content\\snow_albedo.jpg " });
+	world.BindTexture(world.GetComponent<Components::AORoughnessMetallicMapTransmittance>(TerrainEntity), std::vector<std::string>{ "content\\moss_arm.png", "content\\rock_arm.png", "content\\sand_arm.png", "content\\snow_arm.png" });
+	world.BindTexture(world.GetComponent<Components::NormalDisplacementMap>(TerrainEntity), std::vector<std::string>{ "content\\moss_nh.png", "content\\rock_nh.png", "content\\sand_nh.png", "content\\snow_nh.png" });
 
 	// Rendering
 	double delta = 0.0;
