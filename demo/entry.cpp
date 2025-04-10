@@ -96,7 +96,7 @@ void LoadSpheresScene(Camera& camera, World& world)
 	}
 
 	CameraPYR = { 0.0, glm::radians(180.0), 0.0 };
-	camera.Transform.SetOffset({ 35.0, Renderer::Rg + 55.0, 250.0 });
+	camera.Transform.SetOffset(35.0, Renderer::Rg + 55.0, 250.0);
 	camera.Transform.SetRotation(CameraPYR.x, CameraPYR.y, CameraPYR.z);
 };
 
@@ -114,7 +114,7 @@ void LoadGRaff(Camera& camera, World& world)
 	world.GetComponent<Components::WorldMatrix>(ent).SetScale(2.0, 2.0, 2.0);
 
 	CameraPYR = { 0.0, glm::radians(180.0), 0.0 };
-	camera.Transform.SetOffset({ -2.5, Renderer::Rg + 55.0, 35.0 });
+	camera.Transform.SetOffset(-2.5, Renderer::Rg + 55.0, 35.0);
 	camera.Transform.SetRotation(CameraPYR.x, CameraPYR.y, CameraPYR.z);
 };
 
@@ -127,7 +127,7 @@ void LoadMaterialWall(Camera& camera, World& world)
 
 	Entity ent = world.AddShape(shape);
 	CameraPYR = { 0.0, glm::radians(210.0), 0.0 };
-	camera.Transform.SetOffset({ 10.0, Renderer::Rg + 50.0, 20.0 });
+	camera.Transform.SetOffset(10.0, Renderer::Rg + 50.0, 20.0);
 	camera.Transform.SetRotation(CameraPYR.x, CameraPYR.y, CameraPYR.z);
 };
 
@@ -254,7 +254,7 @@ int main(int argc, const char** argv)
 	}
 
 	// Systems setup
-	Window window(1024, 720, "PBR materials demo");
+	Window window(1280, 720, "PBR materials demo");
 	Renderer& renderer = window.GetRenderer();
 	Camera& camera = renderer.m_Camera;
 	EventListener listener = {};
