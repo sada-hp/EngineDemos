@@ -147,9 +147,9 @@ int main(int argc, const char** argv)
 	CloudLayer.Coverage = 0.0;
 
 	Shapes::GeoClipmap Terrain;
-	Terrain.m_Rings = 8u;
-	Terrain.m_Scale = 100.f;
-	Terrain.m_VerPerRing = 1023u;
+	Terrain.m_Rings = 13u;
+	Terrain.m_Scale = 25.f;
+	Terrain.m_VerPerRing = 511u;
 	Terrain.m_MinHeight = 3000.f;
 	Terrain.m_MaxHeight = 35000.f;
 #if 1
