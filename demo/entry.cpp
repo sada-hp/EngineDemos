@@ -11,6 +11,12 @@ glm::vec2 Cursor = glm::vec2(0.0);
 std::map<Enums::EKey, Enums::EAction> KeyStates;
 CloudLayerProfile CloudLayer{};
 CloudLayerProfile CloudLayer_Old{};
+
+float HexScale = 1e1;
+float HexScale_Old = 1e1;
+TerrainLayerProfile TerrainLayers[3];
+TerrainLayerProfile TerrainLayers_Old[3];
+
 bool MousePressed = false;
 double speed_mult = 25000.0;
 float Sun = 1.0;
@@ -83,6 +89,38 @@ inline void UpdateUI(Renderer& renderer)
 	ImGui::SliderFloat("Wind speed", &CloudLayer.WindSpeed, 0.0, 1.0);
 	ImGui::DragFloat("Density", &CloudLayer.Density, 1e-5, 0.0, 1.0, "%.5f");
 
+	ImGui::Separator();
+	ImGui::SliderFloat("Terrain biome scale", &HexScale, 1.0, 100.0);
+	ImGui::Separator();
+
+	ImGui::SliderFloat("Layer1 Ea", &TerrainLayers[0].AltitudeF, 0.0, 1.0);
+	ImGui::SliderFloat("Layer1 Es", &TerrainLayers[0].SlopeF, 0.0, 1.0);
+	ImGui::SliderFloat("Layer1 Ec", &TerrainLayers[0].ConcavityF, 0.0, 1.0);
+	ImGui::SliderInt("Layer1 Octaves", &TerrainLayers[0].Octaves, 1, 50);
+	ImGui::SliderFloat("Layer1 Sharp", &TerrainLayers[0].Sharpness, -1.0, 1.0);
+	ImGui::SliderFloat("Layer1 Freq", &TerrainLayers[0].Frequency, 100.0, 1000.0);
+	ImGui::SliderFloat("Layer1 Offset", &TerrainLayers[0].Offset, -1.0, 1.0);
+
+	ImGui::Separator();
+
+	ImGui::SliderFloat("Layer2 Ea", &TerrainLayers[1].AltitudeF, 0.0, 1.0);
+	ImGui::SliderFloat("Layer2 Es", &TerrainLayers[1].SlopeF, 0.0, 1.0);
+	ImGui::SliderFloat("Layer2 Ec", &TerrainLayers[1].ConcavityF, 0.0, 1.0);
+	ImGui::SliderInt("Layer2 Octaves", &TerrainLayers[1].Octaves, 1, 50);
+	ImGui::SliderFloat("Layer2 Sharp", &TerrainLayers[1].Sharpness, -1.0, 1.0);
+	ImGui::SliderFloat("Layer2 Freq", &TerrainLayers[1].Frequency, 100.0, 1000.0);
+	ImGui::SliderFloat("Layer2 Offset", &TerrainLayers[1].Offset, -1.0, 1.0);
+
+	ImGui::Separator();
+
+	ImGui::SliderFloat("Layer3 Ea", &TerrainLayers[2].AltitudeF, 0.0, 1.0);
+	ImGui::SliderFloat("Layer3 Es", &TerrainLayers[2].SlopeF, 0.0, 1.0);
+	ImGui::SliderFloat("Layer3 Ec", &TerrainLayers[2].ConcavityF, 0.0, 1.0);
+	ImGui::SliderInt("Layer3 Octaves", &TerrainLayers[2].Octaves, 1, 50);
+	ImGui::SliderFloat("Layer3 Sharp", &TerrainLayers[2].Sharpness, -1.0, 1.0);
+	ImGui::SliderFloat("Layer3 Freq", &TerrainLayers[2].Frequency, 100.0, 1000.0);
+	ImGui::SliderFloat("Layer3 Offset", &TerrainLayers[2].Offset, -1.0, 1.0);
+
 	ImGui::End();
 };
 
@@ -119,6 +157,13 @@ inline void ControlWorld(Renderer& renderer, double delta)
 	{
 		renderer.SetCloudLayerSettings(CloudLayer);
 		CloudLayer_Old = CloudLayer;
+	}
+		
+	if (HexScale != HexScale_Old || memcmp(TerrainLayers, TerrainLayers_Old, sizeof(TerrainLayerProfile) * 3) != 0)
+	{
+		renderer.SetTerrainLayerSettings(HexScale, 3, TerrainLayers);
+		memcpy(TerrainLayers_Old, TerrainLayers, sizeof(TerrainLayerProfile) * 3);
+		HexScale_Old = HexScale;
 	}
 };
 
@@ -157,6 +202,13 @@ int main(int argc, const char** argv)
 #else
 	Terrain.m_NoiseSeed = 1u;
 #endif
+
+	HexScale = 5.0;
+	TerrainLayers[0].Offset = 0.45;
+	TerrainLayers[0].Frequency = 250.0;
+	TerrainLayers[1].Frequency = 150.0;
+	TerrainLayers[1].Sharpness = 0.25;
+	TerrainLayers[2].Frequency = 100.0;
 
 	// GR::Utils::ConvertImage_ARMT("content\\moss_r.jpg", "", "content\\moss_ao.jpg", "content\\moss_t.jpg", "content\\moss_arm.png");
 	// GR::Utils::ConvertImage_ARMT("content\\snow_r.jpg", "", "content\\snow_ao.jpg", "content\\snow_t.jpg", "content\\snow_arm.png");
