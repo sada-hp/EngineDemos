@@ -21,7 +21,7 @@ bool MousePressed = false;
 double speed_mult = 25000.0;
 float Sun = 1.0;
 
-glm::vec3 CameraGeo = glm::vec3(0.0f, glm::radians(90.f), 5000.f);
+glm::vec3 CameraGeo = glm::vec3(0.0f, glm::radians(90.f), 7000.f);
 
 void MousePress(Events::MousePress Event, void* Data)
 {
@@ -100,6 +100,7 @@ inline void UpdateUI(Renderer& renderer)
 	ImGui::SliderFloat("Layer1 Sharp", &TerrainLayers[0].Sharpness, -1.0, 1.0);
 	ImGui::SliderFloat("Layer1 Freq", &TerrainLayers[0].Frequency, 100.0, 1000.0);
 	ImGui::SliderFloat("Layer1 Offset", &TerrainLayers[0].Offset, -1.0, 1.0);
+	ImGui::Checkbox("Layer1 Inverse", (bool*)&TerrainLayers[0].Op);
 
 	ImGui::Separator();
 
@@ -110,6 +111,7 @@ inline void UpdateUI(Renderer& renderer)
 	ImGui::SliderFloat("Layer2 Sharp", &TerrainLayers[1].Sharpness, -1.0, 1.0);
 	ImGui::SliderFloat("Layer2 Freq", &TerrainLayers[1].Frequency, 100.0, 1000.0);
 	ImGui::SliderFloat("Layer2 Offset", &TerrainLayers[1].Offset, -1.0, 1.0);
+	ImGui::Checkbox("Layer2 Inverse", (bool*)&TerrainLayers[1].Op);
 
 	ImGui::Separator();
 
@@ -120,6 +122,7 @@ inline void UpdateUI(Renderer& renderer)
 	ImGui::SliderFloat("Layer3 Sharp", &TerrainLayers[2].Sharpness, -1.0, 1.0);
 	ImGui::SliderFloat("Layer3 Freq", &TerrainLayers[2].Frequency, 100.0, 1000.0);
 	ImGui::SliderFloat("Layer3 Offset", &TerrainLayers[2].Offset, -1.0, 1.0);
+	ImGui::Checkbox("Layer3 Inverse", (bool*)&TerrainLayers[2].Op);
 
 	ImGui::End();
 };
@@ -163,7 +166,7 @@ inline void ControlWorld(Renderer& renderer, double delta)
 	{
 		renderer.SetTerrainLayerSettings(HexScale, 3, TerrainLayers);
 		memcpy(TerrainLayers_Old, TerrainLayers, sizeof(TerrainLayerProfile) * 3);
-		HexScale_Old = HexScale;
+		HexScale_Old = HexScale; 
 	}
 };
 
@@ -204,7 +207,7 @@ int main(int argc, const char** argv)
 #endif
 
 	HexScale = 5.0;
-	TerrainLayers[0].Offset = 0.45;
+	TerrainLayers[0].Offset = 0.4;
 	TerrainLayers[0].Frequency = 250.0;
 	TerrainLayers[1].Frequency = 150.0;
 	TerrainLayers[1].Sharpness = 0.25;
