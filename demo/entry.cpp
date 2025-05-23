@@ -78,7 +78,7 @@ inline void UpdateUI(Renderer& renderer)
 
 	ImGui::SliderFloat("Sun position", &Sun, 0.0, 1.0);
 	ImGui::SliderFloat("Coverage", &CloudLayer.Coverage, 0.0, 1.0);
-	ImGui::SliderFloat("Wind speed", &CloudLayer.WindSpeed, 0.0, 1.0);
+	ImGui::SliderFloat("Wind speed", &renderer.WindSpeed, 0.0, 1.0);
 	ImGui::DragFloat("Density", &CloudLayer.Density, 1e-5, 0.0, 1.0, "%.5f");
 
 	ImGui::End();
@@ -123,7 +123,7 @@ inline void ControlWorld(Renderer& renderer, double delta)
 int main(int argc, const char** argv)
 {
 	// Systems setup
-	Window window(1024, 720, "Volumetric clouds demo");
+	Window window(1280, 720, "Volumetric clouds demo");
 	Renderer& renderer = window.GetRenderer();
 	Camera& camera = renderer.m_Camera;
 	EventListener listener = {};
@@ -137,7 +137,7 @@ int main(int argc, const char** argv)
 	listener.Subscribe(KeyPress);
 
 	// World setup
-	renderer.m_Camera.Transform.SetOffset({ 0.0, Renderer::Rg + 50.0, 0.0 });
+	renderer.m_Camera.Transform.offset.y = Renderer::Rg + 50.0;
 
 	// Rendering
 	double delta = 0.0;
