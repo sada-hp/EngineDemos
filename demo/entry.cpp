@@ -13,16 +13,18 @@ std::map<Enums::EKey, Enums::EAction> KeyStates;
 CloudLayerProfile CloudLayer{};
 CloudLayerProfile CloudLayer_Old{};
 
-float HexScale = 1e1;
-float HexScale_Old = 1e1;
+float LayerScale = 1e1;
+float LayerScale_Old = 1e1;
 TerrainLayerProfile TerrainLayers[3];
 TerrainLayerProfile TerrainLayers_Old[3];
+
+int LayerOperations[3] = { 1, 3, 2 };
 
 bool MousePressed = false;
 double speed_mult = 5000.0;
 float Sun = 1.0;
 
-glm::vec3 CameraGeo = glm::vec3(0.f, 90.f, 2500.f);
+glm::dvec4 CameraGeo = glm::dvec4(0.f, 90.f, 2500.f, Renderer::Rg);
 
 void MousePress(Events::MousePress Event, void* Data)
 {
@@ -47,6 +49,7 @@ void MouseScroll(Events::ScrollDelta Event, void* Data)
 
 void KeyPress(Events::KeyPress Event, void* Data)
 {
+	Window* wnd = static_cast<Window*>(Data);
 	KeyStates[Event.key] = Event.action;
 
 	if (Event.action == Enums::EAction::Press)
@@ -55,26 +58,20 @@ void KeyPress(Events::KeyPress Event, void* Data)
 		switch (Event.key)
 		{
 		case Enums::EKey::Key_1:
-			// Sun = 1.0;
-			// CloudLayer.Coverage = 0.5;
-
-			CameraGeo = glm::vec3(0.f, 90.f, 7000.f);
-
+			CameraGeo = glm::vec4(0.f, 90.f, 7000.f, Renderer::Rg);
+			wnd->GetRenderer().m_Camera.Transform.offset = Utils::CartesianFromGeo(CameraGeo.x, CameraGeo.y, CameraGeo.z, CameraGeo.w);
 			break;
 		case Enums::EKey::Key_2:
-			// Sun = 0.495;
-			// CloudLayer.Coverage = 0.4;
-			CameraGeo = glm::vec3(45.f, 90.f, 7000.f);
+			CameraGeo = glm::vec4(45.f, 90.f, 7000.f, Renderer::Rg);
+			wnd->GetRenderer().m_Camera.Transform.offset = Utils::CartesianFromGeo(CameraGeo.x, CameraGeo.y, CameraGeo.z, CameraGeo.w);
 			break;
 		case Enums::EKey::Key_3:
-			// Sun = 0.52;
-			// CloudLayer.Coverage = 0.75;
-			CameraGeo = glm::vec3(0.f, 45.f, 7000.f);
+			CameraGeo = glm::vec4(0.f, 45.f, 7000.f, Renderer::Rg);
+			wnd->GetRenderer().m_Camera.Transform.offset = Utils::CartesianFromGeo(CameraGeo.x, CameraGeo.y, CameraGeo.z, CameraGeo.w);
 			break;
 		case Enums::EKey::Key_4:
-			// Sun = 0.6;
-			// CloudLayer.Coverage = 0.6;
-			CameraGeo = glm::vec3(-95.f, -45.f, 7000.f);
+			CameraGeo = glm::vec4(-95.f, -45.f, 7000.f, Renderer::Rg);
+			wnd->GetRenderer().m_Camera.Transform.offset = Utils::CartesianFromGeo(CameraGeo.x, CameraGeo.y, CameraGeo.z, CameraGeo.w);
 			break;
 		default:
 			break;
@@ -91,6 +88,11 @@ inline void UpdateUI(Renderer& renderer)
 
 	MousePressed = MousePressed && !ImGui::IsWindowHovered();
 
+	ImGui::Text("Camera settings");
+	ImGui::SliderFloat("Exposure", &renderer.m_Camera.Exposure, 0.0, 5.0);
+	ImGui::SliderFloat("Gamma", &renderer.m_Camera.Gamma, 0.0, 5.0);
+
+	ImGui::Separator();
 	ImGui::Text("World settings");
 	ImGui::Separator();
 	ImGui::SliderFloat("Sun position", &Sun, 0.0, 1.0);
@@ -107,7 +109,7 @@ inline void UpdateUI(Renderer& renderer)
 	ImGui::Text("Terrain settings");
 	ImGui::Separator();
 
-	ImGui::SliderFloat("Terrain biome scale", &HexScale, 1.0, 1000.0);
+	ImGui::SliderFloat("Terrain biome scale", &LayerScale, 1.0, 1000.0);
 
 	ImGui::Separator();
 	ImGui::Text("Terrain layer 1 settings");
@@ -120,7 +122,13 @@ inline void UpdateUI(Renderer& renderer)
 	ImGui::SliderFloat("Layer1 Sharp", &TerrainLayers[0].Sharpness, -1.0, 1.0);
 	ImGui::SliderFloat("Layer1 Freq", &TerrainLayers[0].Frequency, 100.0, 1000.0);
 	ImGui::SliderFloat("Layer1 Offset", &TerrainLayers[0].Offset, -1.0, 1.0);
-	ImGui::Checkbox("Layer1 Inverse", (bool*)&TerrainLayers[0].Op);
+
+	bool Inverse1 = LayerOperations[0] < 0;
+	LayerOperations[0] = glm::abs(LayerOperations[0]);
+	ImGui::Combo("Processing 1", &LayerOperations[0], "None\0Default\0Smoothstep\0Ridge");
+	ImGui::Checkbox("Inverse 1", &Inverse1);
+	LayerOperations[0] = Inverse1 ? -LayerOperations[0] : LayerOperations[0];
+	TerrainLayers[0].Op = LayerOperations[0];
 
 	ImGui::Separator();
 	ImGui::Text("Terrain layer 2 settings");
@@ -133,7 +141,13 @@ inline void UpdateUI(Renderer& renderer)
 	ImGui::SliderFloat("Layer2 Sharp", &TerrainLayers[1].Sharpness, -1.0, 1.0);
 	ImGui::SliderFloat("Layer2 Freq", &TerrainLayers[1].Frequency, 100.0, 1000.0);
 	ImGui::SliderFloat("Layer2 Offset", &TerrainLayers[1].Offset, -1.0, 1.0);
-	ImGui::Checkbox("Layer2 Inverse", (bool*)&TerrainLayers[1].Op);
+
+	bool Inverse2 = LayerOperations[1] < 0;
+	LayerOperations[1] = glm::abs(LayerOperations[1]);
+	ImGui::Combo("Processing 2", &LayerOperations[1], "None\0Default\0Smoothstep\0Ridge");
+	ImGui::Checkbox("Inverse 2", &Inverse2);
+	LayerOperations[1] = Inverse2 ? -LayerOperations[1] : LayerOperations[1];
+	TerrainLayers[1].Op = LayerOperations[1];
 
 	ImGui::Separator();
 	ImGui::Text("Terrain layer 3 settings");
@@ -146,7 +160,13 @@ inline void UpdateUI(Renderer& renderer)
 	ImGui::SliderFloat("Layer3 Sharp", &TerrainLayers[2].Sharpness, -1.0, 1.0);
 	ImGui::SliderFloat("Layer3 Freq", &TerrainLayers[2].Frequency, 100.0, 1000.0);
 	ImGui::SliderFloat("Layer3 Offset", &TerrainLayers[2].Offset, -1.0, 1.0);
-	ImGui::Checkbox("Layer3 Inverse", (bool*)&TerrainLayers[2].Op);
+
+	bool Inverse3 = LayerOperations[2] < 0;
+	LayerOperations[2] = glm::abs(LayerOperations[2]);
+	ImGui::Combo("Processing 3", &LayerOperations[2], "None\0Default\0Smoothstep\0Ridge");
+	ImGui::Checkbox("Inverse 3", &Inverse3);
+	LayerOperations[2] = Inverse3 ? -LayerOperations[2] : LayerOperations[2];
+	TerrainLayers[2].Op = LayerOperations[2];
 
 	ImGui::End();
 };
@@ -158,19 +178,16 @@ inline void ControlCamera(GR::Camera& camera, double delta)
 	glm::vec3 off = glm::dvec3(0.0);
 	if (KeyStates[Enums::EKey::A] != Enums::EAction::Release) off.x += speed_mult * delta;
 	if (KeyStates[Enums::EKey::D] != Enums::EAction::Release) off.x -= speed_mult * delta;
-
 	if (KeyStates[Enums::EKey::W] != Enums::EAction::Release) off.z += speed_mult * delta;
 	if (KeyStates[Enums::EKey::S] != Enums::EAction::Release) off.z -= speed_mult * delta;
-
 	if (KeyStates[Enums::EKey::PageUp] != Enums::EAction::Release) off.y += speed_mult * delta;
 	if (KeyStates[Enums::EKey::PageDown] != Enums::EAction::Release) off.y -= speed_mult * delta;
-	
+
 	camera.Transform.Translate(off);
-	//CameraGeo.x += speed_mult * delta;
-	//camera.Transform.SetFromGeo(CameraGeo.x, CameraGeo.y, CameraGeo.z, Renderer::Rg);
+	CameraGeo = Utils::CartesianToGeo(camera.Transform.offset, double(Renderer::Rg));
 
 	glm::vec3 U = glm::normalize(camera.Transform.GetOffset());
-	glm::quat p = glm::rotation(glm::vec3(0.0, 1.0, 0.0), U);
+	glm::quat p = Utils::OrientationFromNormal(U);
 
 	glm::quat q = angleAxis(CameraPYR.y, U);
 	q = q * glm::angleAxis(CameraPYR.z, p * glm::vec3(0, 0, 1));
@@ -178,26 +195,24 @@ inline void ControlCamera(GR::Camera& camera, double delta)
 
 	glm::mat3 M = glm::mat3_cast(q * p);
 	camera.Transform.SetRotation(M);
-
-	// camera.Transform.MoveGeo(off.z, off.x, off.y, Renderer::Rg);
 };
 
 inline void ControlWorld(Renderer& renderer, double delta)
 {
-	renderer.m_SunDirection = glm::normalize(glm::vec3(0.0, Sun * 2.0 - 1.0, 1.0));
-
 	if (CloudLayer_Old != CloudLayer)
 	{
 		renderer.SetCloudLayerSettings(CloudLayer);
-		CloudLayer_Old = CloudLayer;
 	}
 	
-	if (HexScale != HexScale_Old || TerrainLayers != TerrainLayers_Old)
+	if (LayerScale != LayerScale || TerrainLayers != TerrainLayers_Old)
 	{
-		renderer.SetTerrainLayerSettings(HexScale, 3, TerrainLayers);
+		renderer.SetTerrainLayerSettings(LayerScale, 3, TerrainLayers);
 		memcpy(TerrainLayers_Old, TerrainLayers, sizeof(TerrainLayerProfile) * 3);
-		HexScale_Old = HexScale; 
 	}
+
+	CloudLayer_Old = CloudLayer;
+	LayerScale_Old = LayerScale;
+	renderer.m_SunDirection = glm::normalize(glm::vec3(0.0, Sun * 2.0 - 1.0, 1.0));
 };
 
 int main(int argc, const char** argv)
@@ -218,11 +233,12 @@ int main(int argc, const char** argv)
 	listener->Subscribe(KeyPress);
 
 	// World setup
-	renderer.m_Camera.Transform.SetFromGeo(CameraGeo.x, CameraGeo.y, CameraGeo.z, Renderer::Rg);
+	camera.Transform.offset = Utils::CartesianFromGeo(CameraGeo.x, CameraGeo.y, CameraGeo.z, CameraGeo.w);
 	camera.Projection.SetDepthRange(0.01, 1e9);
 	renderer.WindSpeed = 0.1;
 
-	CloudLayer.Coverage = 0.525;
+	CloudLayer.Coverage = 0.545;
+	Sun = 0.95;
 
 	Shapes::GeoClipmap Terrain;
 	Terrain.m_Rings = 9u;
@@ -236,15 +252,14 @@ int main(int argc, const char** argv)
 	Terrain.m_NoiseSeed = 1u;
 #endif
 
-	HexScale = 40.0;
+	LayerScale = 40.0;
 	
 	TerrainLayers[0].AltitudeF = 0.25;
-	TerrainLayers[0].SlopeF = 0.0;
+	TerrainLayers[0].SlopeF = 0.4;
 	TerrainLayers[0].ConcavityF = 0.985;
 	TerrainLayers[0].Sharpness = 1.0;
 	TerrainLayers[0].Frequency = 190.0;
-	TerrainLayers[0].Offset = 0.635;
-	TerrainLayers[0].Op = 1;
+	TerrainLayers[0].Offset = 0.82;
 
 	TerrainLayers[1].AltitudeF = 0.75;
 	TerrainLayers[1].SlopeF = 0.15;
@@ -252,6 +267,7 @@ int main(int argc, const char** argv)
 	TerrainLayers[1].Sharpness = 0.0;
 	TerrainLayers[1].Frequency = 500.0;
 	TerrainLayers[1].Offset = 1.0;
+	TerrainLayers[1].Op = 3;
 
 	TerrainLayers[2].AltitudeF = 0.1;
 	TerrainLayers[2].SlopeF = 0.375;
@@ -281,6 +297,7 @@ int main(int argc, const char** argv)
 	world.BindTexture(world.GetComponent<Components::AlbedoMap>(TerrainEntity), std::vector<std::string>{ "content\\moss_albedo.jpg", "content\\rock_albedo.jpg", "content\\sand_albedo.jpg", "content\\snow_albedo.jpg " });
 	world.BindTexture(world.GetComponent<Components::AORoughnessMetallicMapTransmittance>(TerrainEntity), std::vector<std::string>{ "content\\moss_arm.png", "content\\rock_arm.png", "content\\sand_arm.png", "content\\snow_arm.png" });
 	world.BindTexture(world.GetComponent<Components::NormalDisplacementMap>(TerrainEntity), std::vector<std::string>{ "content\\moss_nh.png", "content\\rock_nh.png", "content\\sand_nh.png", "content\\snow_nh.png" });
+	world.GetComponent<Components::TerrainGrassRings>(TerrainEntity).Count = 4;
 
 	// Rendering
 	double delta = 0.0;
