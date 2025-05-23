@@ -236,7 +236,7 @@ int main(int argc, const char** argv)
 	camera.Transform.offset = Utils::CartesianFromGeo(CameraGeo.x, CameraGeo.y, CameraGeo.z, CameraGeo.w);
 	camera.Projection.SetDepthRange(0.01, 1e9);
 	renderer.WindSpeed = 0.1;
-
+		
 	CloudLayer.Coverage = 0.545;
 	Sun = 0.95;
 
