@@ -243,7 +243,7 @@ inline void ControlWorld(Renderer& renderer, PhysicsWorld& world, double delta)
 int main(int argc, const char** argv)
 {
 	// Systems setup
-	Window window(1024, 720, "Bullet physics demo");
+	Window window(1280, 720, "Bullet physics demo");
 	Renderer& renderer = window.GetRenderer();
 	Camera& camera = renderer.m_Camera;
 	EventListener listener = {};
@@ -260,7 +260,7 @@ int main(int argc, const char** argv)
 	listener.Subscribe(KeyPress);
 
 	// World setup
-	renderer.m_Camera.Transform.SetOffset({ 0.0, Renderer::Rg + 25.0, 0.0 });
+	renderer.m_Camera.Transform.offset.y = Renderer::Rg + 125.0;
 
 	Shapes::GeoClipmap Terrain{};
 	Terrain.m_Scale = 20.f;
