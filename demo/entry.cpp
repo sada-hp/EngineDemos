@@ -240,18 +240,6 @@ int main(int argc, const char** argv)
 	CloudLayer.Coverage = 0.545;
 	Sun = 0.95;
 
-	Shapes::GeoClipmap Terrain;
-	Terrain.m_Rings = 9u;
-	Terrain.m_Scale = 25.f;
-	Terrain.m_VerPerRing = 511u;
-	Terrain.m_MinHeight = 1500.f;
-	Terrain.m_MaxHeight = 35000.f;
-#if 0
-	Terrain.m_NoiseSeed = uint32_t(&Terrain);
-#else
-	Terrain.m_NoiseSeed = 1u;
-#endif
-
 	LayerScale = 40.0;
 	
 	TerrainLayers[0].AltitudeF = 0.25;
@@ -286,18 +274,30 @@ int main(int argc, const char** argv)
 		for (uint32_t j = 0; j <= 4; j++)
 		{
 			Entity ent = world.AddShape(shape);
-			world.GetComponent<Components::WorldMatrix>(ent).SetOffset(glm::dvec3(i * 250.0, Renderer::Rg + Terrain.m_MinHeight + j * 250.0 + 750.0, 0.0));
+			world.GetComponent<Components::WorldMatrix>(ent).SetOffset(glm::dvec3(i * 250.0, Renderer::Rg + 1500.f + j * 250.0 + 750.0, 0.0));
 			world.GetComponent<Components::RGBColor>(ent).Value = glm::vec3(1.0, 0.0, 0.0);
 			world.GetComponent<Components::RoughnessMultiplier>(ent).Value = i * 0.25;
 			world.GetComponent<Components::MetallicOverride>(ent).Value = j * 0.25;
 		}
 	}
 
+	Shapes::GeoClipmap Terrain;
+	Terrain.m_Rings = 9u;
+	Terrain.m_Scale = 25.f;
+	Terrain.m_VerPerRing = 511u;
+	Terrain.m_MinHeight = 1500.f;
+	Terrain.m_MaxHeight = 35000.f;
+#if 0
+	Terrain.m_NoiseSeed = uint32_t(&Terrain);
+#else
+	Terrain.m_NoiseSeed = 1u;
+#endif
+	Terrain.m_GrassRings = 4u;
+
 	Entity TerrainEntity = world.AddShape(Terrain);
 	world.BindTexture(world.GetComponent<Components::AlbedoMap>(TerrainEntity), std::vector<std::string>{ "content\\moss_albedo.jpg", "content\\rock_albedo.jpg", "content\\sand_albedo.jpg", "content\\snow_albedo.jpg " });
 	world.BindTexture(world.GetComponent<Components::AORoughnessMetallicMapTransmittance>(TerrainEntity), std::vector<std::string>{ "content\\moss_arm.png", "content\\rock_arm.png", "content\\sand_arm.png", "content\\snow_arm.png" });
 	world.BindTexture(world.GetComponent<Components::NormalDisplacementMap>(TerrainEntity), std::vector<std::string>{ "content\\moss_nh.png", "content\\rock_nh.png", "content\\sand_nh.png", "content\\snow_nh.png" });
-	world.GetComponent<Components::TerrainGrassRings>(TerrainEntity).Count = 4;
 
 	// Rendering
 	double delta = 0.0;
