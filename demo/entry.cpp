@@ -217,24 +217,6 @@ inline void ControlWorld(Renderer& renderer, double delta)
 
 int main(int argc, const char** argv)
 {
-	glm::mat4 Projection = glm::mat4(1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, -1.02020204, -1,
-		0, 0, -0.202020213, 0);
-
-	glm::mat4 inverse =
-		glm::mat4(-1.000000, -0.000000, 0.000000, -0.000000,
-			-0.000000, -1.000000, -0.000000, 0.000000,
-			0.000000, -0.000000, 1.000000, -0.000000,
-			-0.000000, 0.000000, -0.000000, 1.000000)
-		*
-		glm::mat4(1.000000, 0.000000, -0.000000, 0.000000,
-		0.000000, 1.000000, 0.000000, -0.000000,
-		-0.000000, 0.000000, -0.000000, -4.950000,
-		0.000000, -0.000000, -1.000000, 5.050000);
-
-	printf("%f,%f,%f,%f,\n%f,%f,%f,%f,\n%f,%f,%f,%f,\n%f,%f,%f,%f\n", inverse[0].x, inverse[0].y, inverse[0].z, inverse[0].w, inverse[1].x, inverse[1].y, inverse[1].z, inverse[1].w, inverse[2].x, inverse[2].y, inverse[2].z, inverse[2].w, inverse[3].x, inverse[3].y, inverse[3].z, inverse[3].w);
-
 	// Systems setup
 	Window window(1280, 720, "Procedural planet demo ");
 	Renderer& renderer = window.GetRenderer();
