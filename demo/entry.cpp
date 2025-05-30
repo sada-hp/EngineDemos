@@ -29,8 +29,8 @@ inline glm::vec3 GetCursorDirection(Window& window, Camera& camera)
 {
 	glm::vec2 ScreeUV = Cursor / glm::vec2(window.GetWindowSize());
 	glm::dvec4 pixelPosition = glm::vec4(2.0f * ScreeUV - 1.0f, 1.0f, 1.0f);
-	pixelPosition = glm::inverse(camera.get_projection_matrix()) * pixelPosition;
-	pixelPosition = glm::inverse(camera.get_view_matrix()) * glm::dvec4(glm::dvec2(pixelPosition), -1.0, 0.0);
+	pixelPosition = glm::inverse(camera.GetProjectionMatrix()) * pixelPosition;
+	pixelPosition = glm::inverse(camera.GetViewMatrix()) * glm::dvec4(glm::dvec2(pixelPosition), -1.0, 0.0);
 
 	return glm::normalize(glm::dvec3(pixelPosition));
 };
