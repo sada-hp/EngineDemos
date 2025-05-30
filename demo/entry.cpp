@@ -217,6 +217,24 @@ inline void ControlWorld(Renderer& renderer, double delta)
 
 int main(int argc, const char** argv)
 {
+	glm::mat4 Projection = glm::mat4(1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, -1.02020204, -1,
+		0, 0, -0.202020213, 0);
+
+	glm::mat4 inverse =
+		glm::mat4(-1.000000, -0.000000, 0.000000, -0.000000,
+			-0.000000, -1.000000, -0.000000, 0.000000,
+			0.000000, -0.000000, 1.000000, -0.000000,
+			-0.000000, 0.000000, -0.000000, 1.000000)
+		*
+		glm::mat4(1.000000, 0.000000, -0.000000, 0.000000,
+		0.000000, 1.000000, 0.000000, -0.000000,
+		-0.000000, 0.000000, -0.000000, -4.950000,
+		0.000000, -0.000000, -1.000000, 5.050000);
+
+	printf("%f,%f,%f,%f,\n%f,%f,%f,%f,\n%f,%f,%f,%f,\n%f,%f,%f,%f\n", inverse[0].x, inverse[0].y, inverse[0].z, inverse[0].w, inverse[1].x, inverse[1].y, inverse[1].z, inverse[1].w, inverse[2].x, inverse[2].y, inverse[2].z, inverse[2].w, inverse[3].x, inverse[3].y, inverse[3].z, inverse[3].w);
+
 	// Systems setup
 	Window window(1280, 720, "Procedural planet demo ");
 	Renderer& renderer = window.GetRenderer();
@@ -262,7 +280,7 @@ int main(int argc, const char** argv)
 	TerrainLayers[2].ConcavityF = 0.5;
 	TerrainLayers[2].Sharpness = 0.0;
 	TerrainLayers[2].Frequency = 350.0;
-	TerrainLayers[2].Offset = -0.15;
+	TerrainLayers[2].Offset = -0.025;
 
 	Shapes::Sphere shape;
 	shape.m_Radius = 100.f;
@@ -274,7 +292,7 @@ int main(int argc, const char** argv)
 		for (uint32_t j = 0; j <= 4; j++)
 		{
 			Entity ent = world.AddShape(shape);
-			world.GetComponent<Components::WorldMatrix>(ent).SetOffset(glm::dvec3(i * 250.0, Renderer::Rg + 1500.f + j * 250.0 + 750.0, 0.0));
+			world.GetComponent<Components::WorldMatrix>(ent).SetOffset(glm::dvec3(i * 250.0, Renderer::Rg + 1200.f + j * 250.0 + 750.0, 0.0));
 			world.GetComponent<Components::RGBColor>(ent).Value = glm::vec3(1.0, 0.0, 0.0);
 			world.GetComponent<Components::RoughnessMultiplier>(ent).Value = i * 0.25;
 			world.GetComponent<Components::MetallicOverride>(ent).Value = j * 0.25;

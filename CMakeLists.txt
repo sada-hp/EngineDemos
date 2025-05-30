@@ -11,7 +11,7 @@ if(INCLUDE_GUI)
     add_compile_definitions(INCLUDE_GUI)
 endif()
 
-add_compile_definitions(FORCE_VSYNC)
+# add_compile_definitions(FORCE_VSYNC)
 # add_compile_definitions(VALIDATION_OFF)
 
 add_subdirectory(engine)

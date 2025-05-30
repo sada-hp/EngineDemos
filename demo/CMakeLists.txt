@@ -12,6 +12,7 @@ endif()
 add_executable(demo ${ROOT_SOURCES} ${IMGUI_SOURCES})
 
 add_compile_definitions(DEBUG=$<CONFIG:Debug>)
+set_target_properties(demo PROPERTIES  RUNTIME_OUTPUT_DIRECTORY ${DemoPrj_SOURCE_DIR}/bin)
 set_target_properties(demo PROPERTIES  RUNTIME_OUTPUT_DIRECTORY_DEBUG ${DemoPrj_SOURCE_DIR}/bin)
 set_target_properties(demo PROPERTIES  RUNTIME_OUTPUT_DIRECTORY_RELEASE ${DemoPrj_SOURCE_DIR}/bin)
 target_link_libraries(demo assimp.lib glfw3.lib vulkan-1.lib)
